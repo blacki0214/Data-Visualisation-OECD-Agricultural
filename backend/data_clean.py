@@ -66,6 +66,7 @@ df['nutrient_type'] = df['nutrient_type'].replace({
 # Handle special values
 df['erosion_level'] = df['erosion_level'].replace('_Z', 'Not applicable')
 df['water_type'] = df['water_type'].replace('_Z', 'Not applicable')
+df['nutrient_type'] = df['nutrient_type'].replace('_Z', 'Not applicable')
 
 # Remove duplicate rows
 df = df.drop_duplicates()
