@@ -101,10 +101,44 @@ def clean_data(input_path="data/arg_env_data.csv", output_path="data/cleaned_arg
         if col in df.columns:
             df[col] = df[col].replace('_Z', 'Not applicable')
     
-    # Add a column with more descriptive measure names
-    if 'measure_code' in df.columns:
-        df['Measure'] = df['measure_code']
+    # Extract measure definitions from Measure column if available
+    if 'MEASURE' in df.columns and 'Measure' in df.columns:
+        # Create a mapping of measure codes to their descriptions
+        measure_map = df[['MEASURE', 'Measure']].drop_duplicates().set_index('MEASURE')['Measure'].to_dict()
         
+        # Add the descriptive measure names
+        df['Measure2'] = df['measure_code'].map(measure_map)
+    else:
+        # If we don't have the original Measure column, use a predefined dictionary
+        measure_definitions = {
+            'A1': 'Nutrient Balance (kg/ha)',
+            'A2': 'Nutrient Inputs (kg/ha)',
+            'A3': 'Nutrient Outputs (kg/ha)',
+            'B1': 'Biological fixation',
+            'BRN': 'Nutrient removal by crop residues burned on the field',
+            'C000': 'Other crops',
+            'C211': 'Cereals',
+            'C213': 'Dried pulses and beans',
+            'C217': 'Industrial crops',
+            'C22': 'Forage',
+            'C221': 'Harvested fodder crops',
+            'C222': 'Pasture',
+            'F12': 'Organic fertilisers (excluding livestock manure)',
+            'M21': 'Manure withdrawals',
+            'M23': 'Manure imports',
+            'M_PEST': 'Total molluscicides',
+            'NH3AGR': 'Agricultural ammonia (NH3)',
+            'OT_PEST': 'Sales of other pesticides',
+            'RES': 'Nutrient removal by crop residues removed from the field',
+            # Add other measure codes as you find them in your data
+        }
+        
+        # Add the descriptive measure names
+        df['Measure2'] = df['measure_code'].map(measure_definitions)
+    
+    # If Measure2 is still missing for some rows, use the measure_code as fallback
+    df['Measure2'] = df['Measure2'].fillna(df['measure_code'])
+    
     # Remove duplicate rows
     df = df.drop_duplicates()
     
