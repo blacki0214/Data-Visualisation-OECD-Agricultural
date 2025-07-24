@@ -172,36 +172,51 @@ body {
     border: 1px solid rgba(55, 65, 95, 0.5);
     border-radius: 4px;
     color: #f2f2f2;
+    min-height: 38px; /* Ensure enough height for text */
 }
 
 .dash-dropdown .Select-menu-outer {
     background-color: #252e3f !important;
     border: 1px solid rgba(55, 65, 95, 0.5);
     color: #f2f2f2;
-    z-index: 1000;  /* Ensure it appears above other elements */
+    z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    max-height: 300px; /* Allow more space for longer list */
 }
 
 .dash-dropdown .Select-option {
     background-color: #252e3f !important;
     color: #f2f2f2 !important;
-    padding: 8px 12px;
+    padding: 12px 16px; /* More padding for readability */
+    white-space: normal; /* Allow text wrapping if needed */
+    word-wrap: break-word;
+    line-height: 1.4;
 }
 
-.dash-dropdown .Select-option:hover {
-    background-color: #3a4a6d !important;
-    color: white;
-    cursor: pointer;
+.dash-dropdown .Select-value-label {
+    color: #f2f2f2 !important;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.4;
+    padding: 4px 0;
 }
 
-.dash-dropdown .Select-option.is-selected {
+/* Ensure multi-select tags are readable */
+.dash-dropdown .Select--multi .Select-value {
     background-color: #4099ff;
+    border-color: #2b7fd8;
     color: white;
+    margin: 2px;
+    border-radius: 3px;
+    max-width: calc(100% - 10px);
 }
 
-.dash-dropdown .Select-option.is-focused {
-    background-color: #3a4a6d;
-    color: white;
+.dash-dropdown .Select--multi .Select-value-label {
+    color: white !important;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Fix for dropdown input */

@@ -1,11 +1,122 @@
 from dash import html, dcc, dash_table
 
+def get_country_names():
+    """
+    Get a mapping of ISO-3 country codes to full country names.
+    """
+    country_mapping = {
+        'AUT': 'Austria',
+        'BEL': 'Belgium', 
+        'BGR': 'Bulgaria',
+        'CAN': 'Canada',
+        'CHL': 'Chile',
+        'COL': 'Colombia',
+        'CRI': 'Costa Rica',
+        'CZE': 'Czech Republic',
+        'DNK': 'Denmark',
+        'EST': 'Estonia',
+        'FIN': 'Finland',
+        'FRA': 'France',
+        'DEU': 'Germany',
+        'GRC': 'Greece',
+        'HUN': 'Hungary',
+        'ISL': 'Iceland',
+        'IRL': 'Ireland',
+        'ISR': 'Israel',
+        'ITA': 'Italy',
+        'JPN': 'Japan',
+        'KOR': 'South Korea',
+        'LVA': 'Latvia',
+        'LTU': 'Lithuania',
+        'LUX': 'Luxembourg',
+        'MEX': 'Mexico',
+        'NLD': 'Netherlands',
+        'NZL': 'New Zealand',
+        'NOR': 'Norway',
+        'POL': 'Poland',
+        'PRT': 'Portugal',
+        'SVK': 'Slovak Republic',
+        'SVN': 'Slovenia',
+        'ESP': 'Spain',
+        'SWE': 'Sweden',
+        'CHE': 'Switzerland',
+        'TUR': 'Turkey',
+        'GBR': 'United Kingdom',
+        'USA': 'United States',
+        'HRV': 'Croatia',
+        'CYP': 'Cyprus',
+        'MLT': 'Malta',
+        'ROU': 'Romania',
+        'ARG': 'Argentina',
+        'AUS': 'Australia',
+        'BRA': 'Brazil',
+        'CHN': 'China',
+        'IND': 'India',
+        'IDN': 'Indonesia',
+        'RUS': 'Russia',
+        'ZAF': 'South Africa'
+    }
+    
+    return country_mapping
+
+def is_actual_country(country_code):
+    """
+    Check if a country code represents an actual country (not regional/organizational entities).
+    """
+    # List of non-country entities to exclude
+    excluded_entities = [
+        'EU', 'EU27', 'EU28', 'EU27_2020',  # European Union variants
+        'OECD',  # OECD average
+        'BE2', 'BE3',  # Belgian regions
+        'WORLD', 'G7', 'G20',  # Other aggregates
+    ]
+    
+    return country_code not in excluded_entities
+
 def create_layout(df):
     # Calculate some metrics for the dashboard cards
     total_countries = df['country_code'].nunique()
     total_measures = df['measure_code'].nunique()
     year_range = f"{df['year'].min()}-{df['year'].max()}"
     avg_value = round(df['value'].mean(), 1)
+    
+    # Get country mapping
+    country_names = get_country_names()
+    
+    # Create country dropdown options with full names (exclude regional/organizational entities)
+    country_options = []
+    for code in sorted(df['country_code'].unique()):
+        # Only include actual countries
+        if is_actual_country(code):
+            full_name = country_names.get(code, code)
+            # Show only the full country name, not the code
+            country_options.append({'label': full_name, 'value': code})
+    
+    # Create measure dropdown options using the Measure column (not Measure2)
+    measure_options = []
+    
+    # Use the 'Measure' column which contains the full descriptive names
+    if 'Measure' in df.columns:
+        # Create a mapping from measure codes to their descriptions
+        measure_mapping = df[['measure_code', 'Measure']].drop_duplicates().set_index('measure_code')['Measure'].to_dict()
+        
+        for code in sorted(df['measure_code'].unique()):
+            full_name = measure_mapping.get(code, code)
+            # Clean up the description if it's too long
+            if len(full_name) > 60:
+                full_name = full_name[:57] + "..."
+            measure_options.append({'label': full_name, 'value': code})
+    else:
+        # Fallback to just using the codes if Measure column doesn't exist
+        for code in sorted(df['measure_code'].unique()):
+            measure_options.append({'label': code, 'value': code})
+    
+    # Get the first actual country for default value
+    default_country = None
+    for code in df['country_code'].unique():
+        if is_actual_country(code):
+            default_country = code
+            break
     
     return html.Div([
         # Dashboard Header
@@ -33,7 +144,7 @@ def create_layout(df):
             
             html.Div([
                 html.Div([
-                    html.Span(f"{total_countries}", className="metric-value"),
+                    html.Span(f"{len(country_options)}", className="metric-value"),  # Show actual country count
                     html.I(className="fas fa-globe metric-icon")
                 ]),
                 html.Div("COUNTRIES", className="metric-label"),
@@ -84,14 +195,15 @@ def create_layout(df):
                     html.Label("Select Country/Countries", style={'fontWeight': 'bold', 'color': "#f2f2f2"}),
                     dcc.Dropdown(
                         id='country-dropdown',
-                        options=[{'label': c, 'value': c} for c in sorted(df['country_code'].unique())],
-                        value=[df['country_code'].iloc[0]] if not df.empty else None,
+                        options=country_options,
+                        value=[default_country] if default_country else None,
                         multi=True,
                         className="dash-dropdown",
                         style={
                             'color': '#000000',
                             'backgroundColor': '#252e3f'
-                        }
+                        },
+                        placeholder="Select countries..."
                     )
                 ], className="filter-item"),
                 
@@ -113,7 +225,7 @@ def create_layout(df):
                     html.Label("Select Measure", style={'fontWeight': 'bold', 'color': '#f2f2f2'}),
                     dcc.Dropdown(
                         id='measure-dropdown',
-                        options=[{'label': m, 'value': m} for m in sorted(df['measure_code'].unique())],
+                        options=measure_options,
                         value=df['measure_code'].iloc[0] if not df.empty else None,
                         className="dash-dropdown",
                         style={
@@ -128,15 +240,11 @@ def create_layout(df):
                 html.Label("Year Range", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '10px', 'display': 'block'}),
                 dcc.RangeSlider(
                     id='year-slider',
-                    min=df['year'].min() if not df.empty else 2000,
-                    max=df['year'].max() if not df.empty else 2020,
+                    min=2012,  # Fixed to actual data range
+                    max=2022,  # Fixed to actual data range
                     step=1,
-                    marks={i: str(i) for i in range(
-                        int(df['year'].min()) if not df.empty else 2000, 
-                        int(df['year'].max()) + 1 if not df.empty else 2021, 
-                        5)},
-                    value=[df['year'].min() if not df.empty else 2000, 
-                           df['year'].max() if not df.empty else 2020]
+                    marks={i: str(i) for i in range(2012, 2023, 2)},  # Show marks every 2 years
+                    value=[2012, 2022]  # Default to full range
                 )
             ]),
         ], className="controls-container"),
@@ -187,9 +295,9 @@ def create_layout(df):
                     )
                 ], style={'marginBottom': '15px'}),
                 
-                # NEW EU Data Handling Section
+                # EU Data Handling Section
                 html.Div([
-                    html.Label(style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '5px', 'fontSize': '12px'}),
+                    html.Label("EU Data Handling", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '5px', 'fontSize': '12px'}),
                     dcc.RadioItems(
                         id='eu-data-option',
                         value='distribute',
@@ -235,13 +343,16 @@ def create_layout(df):
                     ], className="chart-actions")
                 ], className="chart-header"),
                 dcc.Graph(id='bar-chart', style={'height': '300px'})
-            ], className="chart-container"),
-            
-            # Box Plot
+            ], className="chart-container"),   
+        ], className="chart-row"),
+        
+        # NEW Charts Row 3 - Add Scatter Plot
+        html.Div([
+            # Scatter Plot
             html.Div([
                 html.Div([
                     html.Div([
-                        html.Span("Value Distribution", className="chart-title"),
+                        html.Span("Scatter Plot Analysis", className="chart-title"),
                         html.Span(f"February 2023", className="chart-date")
                     ], className="chart-header"),
                     html.Div([
@@ -249,10 +360,30 @@ def create_layout(df):
                         html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
                     ], className="chart-actions")
                 ], className="chart-header"),
-                dcc.Graph(id='box-plot', style={'height': '300px'})
-            ], className="chart-container"),
+                
+                # Add X-axis selector for scatter plot
+                html.Div([
+                    html.Label("X-Axis Variable", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '5px', 'fontSize': '12px'}),
+                    dcc.Dropdown(
+                        id='x-axis-dropdown',
+                        options=[
+                            {'label': 'Year', 'value': 'year'},
+                            {'label': 'Value Distribution', 'value': 'value'}
+                        ],
+                        value='year',
+                        clearable=False,
+                        className="dash-dropdown",
+                        style={
+                            'color': '#000000',
+                            'backgroundColor': '#252e3f'
+                        }
+                    )
+                ], style={'marginBottom': '15px'}),
+                
+                dcc.Graph(id='scatter-chart', style={'height': '300px'})
+            ], className="chart-container full-width")
         ], className="chart-row"),
-        
+
         # Data Table & Summary
         html.Div([
             html.Div([
@@ -307,9 +438,9 @@ def create_layout(df):
         # Note about data representation
         html.Div([
             html.P([
-                "Note: Some entities like EU27 or EU28 are excluded from the map visualization as they are not standard country codes.",
+                "Note: Regional entities like EU, OECD, and Belgian regions are excluded from country selection but may appear in other visualizations.",
                 html.Br(),
-                "BE2 represents the Flemish Region and BE3 represents Wallonia in Belgium."
+                "The map visualization handles EU data separately through the EU Data Handling option."
             ], style={'fontSize': '12px', 'color': '#a9a9a9', 'marginTop': '5px', 'textAlign': 'center'})
         ], style={'width': '100%'}),
         

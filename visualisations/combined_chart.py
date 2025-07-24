@@ -28,6 +28,10 @@ def create_combined_chart(filtered_df, nutrient, measure):
     # Group by year and calculate metrics
     yearly_data = filtered_df.groupby('year')['value'].agg(['mean', 'median', 'count']).reset_index()
     
+    # Get unit information for meaningful labels
+    unit = filtered_df['unit'].iloc[0] if 'unit' in filtered_df.columns else ''
+    value_label = f'Value ({unit})' if unit else 'Value'
+    
     # Create figure
     fig = go.Figure()
     
@@ -37,7 +41,11 @@ def create_combined_chart(filtered_df, nutrient, measure):
             x=yearly_data['year'],
             y=yearly_data['mean'],
             name='Average',
-            marker_color='rgba(133, 92, 248, 0.7)'
+            marker_color='rgba(133, 92, 248, 0.7)',
+            hovertemplate='<b><span style="color:black">Average</span></b><br>' +
+                         '<span style="color:black">Year: %{x}</span><br>' +
+                         f'<span style="color:black">{value_label}: %{{y:.2f}}</span><br>' +
+                         '<extra></extra>'
         )
     )
     
@@ -49,7 +57,11 @@ def create_combined_chart(filtered_df, nutrient, measure):
             name='Median',
             mode='lines+markers',
             line=dict(color='#FF5757', width=3),
-            marker=dict(size=8)
+            marker=dict(size=8),
+            hovertemplate='<b><span style="color:black">Median</span></b><br>' +
+                         '<span style="color:black">Year: %{x}</span><br>' +
+                         f'<span style="color:black">{value_label}: %{{y:.2f}}</span><br>' +
+                         '<extra></extra>'
         )
     )
     
@@ -72,7 +84,11 @@ def create_combined_chart(filtered_df, nutrient, measure):
                     y=p(x_range),
                     mode='lines',
                     name='Trend',
-                    line=dict(color='#4099ff', width=2, dash='dash')
+                    line=dict(color='#4099ff', width=2, dash='dash'),
+                    hovertemplate='<b><span style="color:black">Trend Line</span></b><br>' +
+                                 '<span style="color:black">Year: %{x}</span><br>' +
+                                 f'<span style="color:black">{value_label}: %{{y:.2f}}</span><br>' +
+                                 '<extra></extra>'
                 )
             )
         except Exception as e:
@@ -81,7 +97,7 @@ def create_combined_chart(filtered_df, nutrient, measure):
     # Update layout
     fig.update_layout(
         xaxis_title='Year',
-        yaxis_title=f'{measure} Value',
+        yaxis_title=value_label,
         legend_title='Metrics',
         template="plotly_dark",
         plot_bgcolor='rgba(38, 45, 65, 0.2)',
@@ -95,7 +111,39 @@ def create_combined_chart(filtered_df, nutrient, measure):
             xanchor="right",
             x=1
         ),
-        hovermode='x unified'
+        hovermode='x unified',
+        
+        # Add hoverlabel styling to control the unified hover box
+        hoverlabel=dict(
+            bgcolor="#f2f2f2",
+            bordercolor="#f2f2f2",
+            font_size=12,
+            font_family="Arial",
+            font_color="black"
+        ),
+        
+        # Add title with measure and nutrient info
+        title=dict(
+            text=f"{measure} - {nutrient}",
+            x=0.5,
+            xanchor='center',
+            font=dict(size=14, color="#f2f2f2")
+        )
+    )
+    
+    # Ensure proper axis formatting
+    fig.update_xaxes(
+        tickmode='linear',
+        tick0=yearly_data['year'].min(),
+        dtick=1,
+        showgrid=True,
+        gridcolor='rgba(255, 255, 255, 0.1)'
+    )
+    
+    fig.update_yaxes(
+        showgrid=True,
+        gridcolor='rgba(255, 255, 255, 0.1)',
+        tickformat='.2f'
     )
     
     return fig
