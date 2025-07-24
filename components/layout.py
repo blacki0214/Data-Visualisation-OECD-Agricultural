@@ -189,18 +189,15 @@ def create_layout(df):
                 
                 # NEW EU Data Handling Section
                 html.Div([
-                    html.Label("EU Data Handling", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '5px', 'fontSize': '12px'}),
+                    html.Label(style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '5px', 'fontSize': '12px'}),
                     dcc.RadioItems(
                         id='eu-data-option',
-                        options=[
-                            {'label': 'Distribute EU data to member countries', 'value': 'distribute'},
-                            {'label': 'Show only individual countries', 'value': 'ignore'}
-                        ],
                         value='distribute',
                         labelStyle={'display': 'block', 'margin': '5px 0', 'fontSize': '12px'},
                         style={'color': '#f2f2f2'}
                     )
                 ], style={'marginBottom': '15px', 'marginTop': '10px'}),
+            
                 
                 dcc.Graph(id='choropleth-map', style={'height': '300px'})
             ], className="chart-container"),

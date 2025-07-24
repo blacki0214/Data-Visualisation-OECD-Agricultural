@@ -26,6 +26,10 @@ def create_scatter_plot(filtered_df, nutrient, measure, x_axis='year'):
         )
         return fig
     
+    # Get unit information for meaningful labels
+    unit = filtered_df['unit'].iloc[0] if 'unit' in filtered_df.columns else ''
+    value_label = f'Value ({unit})' if unit else 'Value'
+    
     # Create scatter plot
     if x_axis == 'year':
         try:
@@ -36,9 +40,9 @@ def create_scatter_plot(filtered_df, nutrient, measure, x_axis='year'):
                 color='country_code',
                 size='value',
                 size_max=30,
-                title=f'Relationship Between Year and {measure} for {nutrient}',
-                labels={'value': 'Value', 'year': 'Year', 'country_code': 'Country'},
-                hover_data=['year', 'value', 'country_code']
+                title=f'{measure} for {nutrient} Over Time',
+                labels={'value': value_label, 'year': 'Year', 'country_code': 'Country'},
+                hover_data={'year': True, 'value': ':.2f', 'country_code': True, 'unit': True}
             )
             
             # Add trendlines if there are enough data points
@@ -57,7 +61,8 @@ def create_scatter_plot(filtered_df, nutrient, measure, x_axis='year'):
                                 mode='lines', 
                                 name=f'Trend {country}',
                                 line=dict(dash='dash'),
-                                opacity=0.7
+                                opacity=0.7,
+                                hovertemplate=f'<b>Trend {country}</b><br>Year: %{{x}}<br>{value_label}: %{{y:.2f}}<extra></extra>'
                             )
                         )
         except Exception as e:
@@ -68,8 +73,8 @@ def create_scatter_plot(filtered_df, nutrient, measure, x_axis='year'):
                 x='year',
                 y='value',
                 color='country_code',
-                title=f'Relationship Between Year and {measure} for {nutrient}',
-                labels={'value': 'Value', 'year': 'Year', 'country_code': 'Country'}
+                title=f'{measure} for {nutrient} Over Time',
+                labels={'value': value_label, 'year': 'Year', 'country_code': 'Country'}
             )
     else:
         # Create a value distribution scatter plot
@@ -87,8 +92,8 @@ def create_scatter_plot(filtered_df, nutrient, measure, x_axis='year'):
                 size='value',
                 size_max=30,
                 title=f'Value Distribution of {measure} for {nutrient}',
-                labels={'value': 'Value', 'count': 'Count', 'country_code': 'Country'},
-                hover_data=['year', 'value', 'country_code']
+                labels={'value': value_label, 'count': 'Count', 'country_code': 'Country'},
+                hover_data={'year': True, 'value': ':.2f', 'country_code': True, 'unit': True}
             )
         except Exception as e:
             print(f"Error creating value-based scatter plot: {e}")
@@ -99,7 +104,7 @@ def create_scatter_plot(filtered_df, nutrient, measure, x_axis='year'):
                 y='value',  # Just to have something on y-axis
                 color='country_code',
                 title=f'Value Distribution of {measure} for {nutrient}',
-                labels={'value': 'Value', 'country_code': 'Country'}
+                labels={'value': value_label, 'country_code': 'Country'}
             )
     
     fig.update_layout(
@@ -107,7 +112,15 @@ def create_scatter_plot(filtered_df, nutrient, measure, x_axis='year'):
         hovermode='closest',
         legend_title='Country',
         xaxis_title=x_axis.capitalize(),
-        yaxis_title='Value' if x_axis == 'year' else 'Count'
+        yaxis_title=value_label if x_axis == 'year' else 'Count'
+    )
+    
+    # Update hover template to include unit information
+    fig.update_traces(
+        hovertemplate='<b>%{fullData.name}</b><br>' +
+                      'Year: %{x}<br>' +
+                      f'{value_label}: %{{y:.2f}}<br>' +
+                      '<extra></extra>'
     )
     
     return fig

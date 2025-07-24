@@ -175,7 +175,7 @@ body {
 }
 
 .dash-dropdown .Select-menu-outer {
-    background-color: #252e3f;
+    background-color: #252e3f !important;
     border: 1px solid rgba(55, 65, 95, 0.5);
     color: #f2f2f2;
     z-index: 1000;  /* Ensure it appears above other elements */
@@ -183,12 +183,13 @@ body {
 }
 
 .dash-dropdown .Select-option {
-    color: #f2f2f2;
+    background-color: #252e3f !important;
+    color: #f2f2f2 !important;
     padding: 8px 12px;
 }
 
 .dash-dropdown .Select-option:hover {
-    background-color: #3a4a6d;
+    background-color: #3a4a6d !important;
     color: white;
     cursor: pointer;
 }
@@ -315,5 +316,46 @@ body {
     height: 100%;
     width: 70%;
     border-radius: 10px;
+}
+
+/* Custom styling for region dropdown */
+.region-dropdown .Select-control {
+    background-color: #252e3f;
+    color: white;
+}
+
+.region-dropdown .Select-value-label {
+    color: white !important;
+}
+
+.region-dropdown .Select-menu-outer {
+    background-color: #252e3f;
+    border: 1px solid #666666;
+}
+
+.region-dropdown .Select-option {
+    background-color: #252e3f;
+    color: white;
+}
+
+.region-dropdown .Select-option:hover {
+    background-color: #3a4660;
+}
+
+.region-dropdown .Select-option.is-focused {
+    background-color: #3a4660;
+}
+
+.region-dropdown .Select-option.is-selected {
+    background-color: #3a4660;
+}
+
+.region-dropdown .Select-placeholder {
+    color: #3a4660;
+}
+
+/* Fix for dropdown arrow color */
+.region-dropdown .Select-arrow {
+    border-color: white transparent transparent;
 }
 

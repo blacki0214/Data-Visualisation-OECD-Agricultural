@@ -72,7 +72,10 @@ def create_choropleth(df, nutrient, measure, selected_year, distribute_eu=True):
             locationmode='ISO-3',
             color_continuous_scale=px.colors.sequential.Plasma,
             title='',
-            labels={'value': 'Value', 'country_code': 'Country'}
+            labels={'value': 'Value', 'country_code': 'Country'},
+            # Add hover data
+            hover_name='country_code',
+            hover_data={'country_code': False, 'value': ':.2f'}
         )
         
         # Update layout for dark theme
@@ -88,8 +91,14 @@ def create_choropleth(df, nutrient, measure, selected_year, distribute_eu=True):
                 showlakes=True,
                 showcountries=True,
                 countrycolor='rgba(255, 255, 255, 0.2)',
-                # Focus on Europe since we're dealing with EU data
-                scope='europe' 
+                # Set to global scope instead of just Europe
+                scope='world',
+                # Center on a more balanced view
+                center=dict(lon=0, lat=30),
+                # Add some projection options
+                projection=dict(
+                    scale=1.0  # Adjust scale as needed
+                )
             ),
             template="plotly_dark",
             plot_bgcolor='rgba(38, 45, 65, 0.2)',
@@ -102,6 +111,58 @@ def create_choropleth(df, nutrient, measure, selected_year, distribute_eu=True):
                 len=0.5,
                 y=0.5
             )
+        )
+        
+        # Add buttons to allow user to select regions
+        fig.update_layout(
+            updatemenus=[
+                dict(
+                    buttons=list([
+                        dict(
+                            args=[{"geo.scope": "world", 
+                                   "geo.center": dict(lon=0, lat=30),
+                                   "geo.projection.scale": 1.0}],
+                            label="World",
+                            method="relayout"
+                        ),
+                        dict(
+                            args=[{"geo.scope": "europe",
+                                   "geo.center": dict(lon=15, lat=55),
+                                   "geo.projection.scale": 1.5}],
+                            label="Europe",
+                            method="relayout"
+                        ),
+                        dict(
+                            args=[{"geo.scope": "asia",
+                                   "geo.center": dict(lon=100, lat=35),
+                                   "geo.projection.scale": 1.2}],
+                            label="Asia",
+                            method="relayout"
+                        ),
+                        dict(
+                            args=[{"geo.scope": "north america",
+                                   "geo.center": dict(lon=-100, lat=40),
+                                   "geo.projection.scale": 1.2}],
+                            label="North America",
+                            method="relayout"
+                        ),
+                    ]),
+                    direction="down",
+                    pad={"r": 10, "t": 10},
+                    showactive=True,
+                    x=0.1,
+                    xanchor="left",
+                    y=1.01,
+                    yanchor="bottom",
+                    # Update these styling properties for better visibility
+                    bgcolor="#252e3f",
+                    font=dict(color="#ffffff", size=12),
+                    bordercolor="#666666",  # Add a border for definition
+                    borderwidth=1,
+                    # Make the dropdown menu more visible
+                    active=0
+                ),
+            ]
         )
     
     except Exception as e:
