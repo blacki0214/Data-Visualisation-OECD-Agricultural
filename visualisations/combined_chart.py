@@ -29,11 +29,60 @@ def create_combined_chart(filtered_df, nutrient, measure):
     yearly_data = filtered_df.groupby('year')['value'].agg(['mean', 'median', 'count']).reset_index()
     
     # Get unit information for meaningful labels
-    unit = filtered_df['unit'].iloc[0] if 'unit' in filtered_df.columns else ''
-    value_label = f'Value ({unit})' if unit else 'Value'
+    unit = filtered_df['unit'].iloc[0] if 'unit' in filtered_df.columns and not filtered_df['unit'].isna().iloc[0] else ''
+    
+    # Create unit-aware value label
+    if unit:
+        if unit == 'T':
+            value_label = 'Value (Tonnes)'
+        elif unit == 'KG':
+            value_label = 'Value (kg)'
+        elif unit == 'HA':
+            value_label = 'Value (Hectares)'
+        elif unit == 'T_CO2E':
+            value_label = 'Value (Tonnes CO₂ equivalent)'
+        elif unit == 'TOE':
+            value_label = 'Value (Tonnes Oil Equivalent)'
+        else:
+            value_label = f'Value ({unit})'
+    else:
+        value_label = 'Value'
+    
+    # Get measure description for title
+    measure_desc = filtered_df['Measure'].iloc[0] if 'Measure' in filtered_df.columns else measure
     
     # Create figure
     fig = go.Figure()
+    
+    # Format values based on unit for better readability
+    def format_value(val, unit_type):
+        if pd.isna(val):
+            return "N/A"
+        
+        if unit_type in ['T', 'T_CO2E', 'TOE']:
+            # For tonnes, show with appropriate decimal places
+            if val >= 1000000:
+                return f"{val/1000000:.2f}M"
+            elif val >= 1000:
+                return f"{val/1000:.1f}K"
+            else:
+                return f"{val:.2f}"
+        elif unit_type == 'HA':
+            # For hectares
+            if val >= 1000000:
+                return f"{val/1000000:.2f}M"
+            elif val >= 1000:
+                return f"{val/1000:.1f}K"
+            else:
+                return f"{val:.1f}"
+        elif unit_type == 'KG':
+            # For kilograms
+            if val >= 1000:
+                return f"{val/1000:.2f}T"
+            else:
+                return f"{val:.2f}"
+        else:
+            return f"{val:.2f}"
     
     # Add bars for average values
     fig.add_trace(
@@ -42,10 +91,12 @@ def create_combined_chart(filtered_df, nutrient, measure):
             y=yearly_data['mean'],
             name='Average',
             marker_color='rgba(133, 92, 248, 0.7)',
-            hovertemplate='<b><span style="color:black">Average</span></b><br>' +
-                         '<span style="color:black">Year: %{x}</span><br>' +
-                         f'<span style="color:black">{value_label}: %{{y:.2f}}</span><br>' +
-                         '<extra></extra>'
+            hovertemplate='<b><span style="color:#f2f2f2">Average</span></b><br>' +
+                         '<span style="color:#f2f2f2">Year: %{x}</span><br>' +
+                         f'<span style="color:#f2f2f2">{value_label}: %{{y:.2f}}</span><br>' +
+                         '<extra></extra>',
+            # Add custom hover text with formatted values
+            customdata=[format_value(val, unit) for val in yearly_data['mean']],
         )
     )
     
@@ -58,10 +109,11 @@ def create_combined_chart(filtered_df, nutrient, measure):
             mode='lines+markers',
             line=dict(color='#FF5757', width=3),
             marker=dict(size=8),
-            hovertemplate='<b><span style="color:black">Median</span></b><br>' +
-                         '<span style="color:black">Year: %{x}</span><br>' +
-                         f'<span style="color:black">{value_label}: %{{y:.2f}}</span><br>' +
-                         '<extra></extra>'
+            hovertemplate='<b><span style="color:#f2f2f2">Median</span></b><br>' +
+                         '<span style="color:#f2f2f2">Year: %{x}</span><br>' +
+                         f'<span style="color:#f2f2f2">{value_label}: %{{y:.2f}}</span><br>' +
+                         '<extra></extra>',
+            customdata=[format_value(val, unit) for val in yearly_data['median']],
         )
     )
     
@@ -85,9 +137,9 @@ def create_combined_chart(filtered_df, nutrient, measure):
                     mode='lines',
                     name='Trend',
                     line=dict(color='#4099ff', width=2, dash='dash'),
-                    hovertemplate='<b><span style="color:black">Trend Line</span></b><br>' +
-                                 '<span style="color:black">Year: %{x}</span><br>' +
-                                 f'<span style="color:black">{value_label}: %{{y:.2f}}</span><br>' +
+                    hovertemplate='<b><span style="color:#f2f2f2">Trend Line</span></b><br>' +
+                                 '<span style="color:#f2f2f2">Year: %{x}</span><br>' +
+                                 f'<span style="color:#f2f2f2">{value_label}: %{{y:.2f}}</span><br>' +
                                  '<extra></extra>'
                 )
             )
@@ -111,25 +163,44 @@ def create_combined_chart(filtered_df, nutrient, measure):
             xanchor="right",
             x=1
         ),
-        hovermode='x unified',
-        
-        # Add hoverlabel styling to control the unified hover box
+        hovermode='closest',
+        # Add hoverlabel styling to control the hover box
         hoverlabel=dict(
-            bgcolor="#f2f2f2",
+            bgcolor="rgba(38, 45, 65, 0.95)",
             bordercolor="#f2f2f2",
             font_size=12,
             font_family="Arial",
-            font_color="black"
+            font_color="#f2f2f2"
         ),
-        
         # Add title with measure and nutrient info
         title=dict(
-            text=f"{measure} - {nutrient}",
+            text=f"{measure_desc} - {nutrient}",
             x=0.5,
             xanchor='center',
             font=dict(size=14, color="#f2f2f2")
         )
     )
+    
+    # Format y-axis based on unit
+    if unit in ['T', 'T_CO2E', 'TOE']:
+        # For large values, use engineering notation
+        fig.update_yaxes(
+            showgrid=True,
+            gridcolor='rgba(255, 255, 255, 0.1)',
+            tickformat='.2s'  # Scientific notation
+        )
+    elif unit == 'HA':
+        fig.update_yaxes(
+            showgrid=True,
+            gridcolor='rgba(255, 255, 255, 0.1)',
+            tickformat='.1f'
+        )
+    else:
+        fig.update_yaxes(
+            showgrid=True,
+            gridcolor='rgba(255, 255, 255, 0.1)',
+            tickformat='.2f'
+        )
     
     # Ensure proper axis formatting
     fig.update_xaxes(
@@ -138,12 +209,6 @@ def create_combined_chart(filtered_df, nutrient, measure):
         dtick=1,
         showgrid=True,
         gridcolor='rgba(255, 255, 255, 0.1)'
-    )
-    
-    fig.update_yaxes(
-        showgrid=True,
-        gridcolor='rgba(255, 255, 255, 0.1)',
-        tickformat='.2f'
     )
     
     return fig
