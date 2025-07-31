@@ -488,11 +488,11 @@ if not sample_combinations.empty:
 else:
     print("\nNo valid combinations found in the data")
 
-# Add client-side callback to reset scroll position when tabs change (visualization sections only)
+# Add client-side callback to reset scroll position for visualization sections only when tabs change
 app.clientside_callback(
     """
     function(selected_tab) {
-        // Reset scroll position to top when tab changes (only for visualization sections)
+        // Reset scroll position only for visualization sections when tab changes
         setTimeout(function() {
             // Reset scrollable sections within tabs (visualization areas only)
             var scrollableSections = document.querySelectorAll('.scrollable-section');
@@ -500,7 +500,7 @@ app.clientside_callback(
                 section.scrollTop = 0;
             });
             
-            // Reset chart containers scroll
+            // Reset chart containers scroll within visualization areas
             var chartContainers = document.querySelectorAll('.chart-container');
             chartContainers.forEach(function(container) {
                 container.scrollTop = 0;
@@ -521,4 +521,4 @@ app.clientside_callback(
 )
 
 if __name__ == '__main__':
-    app.run_server(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
