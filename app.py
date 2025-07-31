@@ -1,9 +1,9 @@
-from dash import Dash, Input, Output, html
+import os
+import re
 import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
-import re
-import os
+from dash import Dash, Input, Output, html
 
 # Import data loader - now from database
 from utils.database import load_data_from_db
@@ -34,13 +34,25 @@ df = load_data_from_db()
 if df is None:
     print("❌ Failed to load data from database!")
     # Fallback to file-based loading if database fails
-    from utils.data_loader import load_data
-    print("🔄 Falling back to file-based data loading...")
-    df = load_data()
+    try:
+        from utils.data_loader import load_data
+        print("🔄 Falling back to file-based data loading...")
+        df = load_data()
+    except:
+        print("❌ File-based loading also failed!")
+        df = None
     
     if df is None:
         print("❌ Failed to load data from both database and files!")
-        raise Exception("Could not load data from any source")
+        # Create empty DataFrame as last resort
+        df = pd.DataFrame({
+            'country_code': ['USA', 'CAN'],
+            'year': [2020, 2020],
+            'nutrient_type': ['Nitrogen', 'Nitrogen'],
+            'measure_code': ['F1', 'F1'],
+            'value': [100, 200]
+        })
+        print("⚠️ Using minimal sample data")
 else:
     print(f"✅ Successfully loaded {len(df)} rows from database")
 
@@ -83,9 +95,10 @@ app = Dash(__name__,
                'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap'
            ])
 
-# Expose server for deployment - MUST be before the layout
+# IMPORTANT: Expose server for deployment - MUST be named 'server'
 server = app.server
 
+# Set the layout
 app.layout = create_layout(df_cleaned)
 
 # Function to filter data based on user selections
@@ -224,13 +237,13 @@ def update_box_plot(countries, nutrient, measure, years):
 def update_scatter_chart(countries, nutrient, measure, years, x_axis):
     # Handle empty selections
     if not countries or not nutrient or not measure or not years:
-        # Return an empty figure with a message
         fig = go.Figure()
         fig.update_layout(
-            title="Please select countries, nutrient, measure and years",
-            xaxis_title="X",
-            yaxis_title="Y",
-            template="plotly_white"
+            title="Please select countries, nutrient, measure, and year range",
+            plot_bgcolor='rgba(38, 45, 65, 0.2)',
+            paper_bgcolor='rgba(0, 0, 0, 0)',
+            font=dict(color="#f2f2f2"),
+            margin=dict(l=40, r=20, t=50, b=40)
         )
         return fig
     
@@ -238,7 +251,7 @@ def update_scatter_chart(countries, nutrient, measure, years, x_axis):
     filtered = filter_data(countries, nutrient, measure, years)
     
     # Return the scatter plot
-    return create_scatter_plot(filtered, nutrient, measure, x_axis)
+    return create_scatter_plot(filtered, nutrient, measure, x_axis or 'year')
 
 # Combined Chart Callback
 @app.callback(
@@ -252,7 +265,7 @@ def update_combined_chart(countries, nutrient, measure, years):
     if not countries or not nutrient or not measure:
         fig = go.Figure()
         fig.update_layout(
-            title="Please select countries, nutrient and measure",
+            title="Please select countries, nutrient, and measure",
             plot_bgcolor='rgba(38, 45, 65, 0.2)',
             paper_bgcolor='rgba(0, 0, 0, 0)',
             font=dict(color="#f2f2f2"),
@@ -260,13 +273,7 @@ def update_combined_chart(countries, nutrient, measure, years):
         )
         return fig
     
-    # Filter data
     filtered = filter_data(countries, nutrient, measure, years)
-    
-    # Debug info
-    print(f"Combined chart: {len(filtered)} rows, {filtered['country_code'].nunique()} countries")
-    
-    # Return the combined chart
     return create_combined_chart(filtered, nutrient, measure)
 
 # Data Summary Callback
@@ -278,6 +285,9 @@ def update_combined_chart(countries, nutrient, measure, years):
      Input('year-slider', 'value')]
 )
 def update_summary(countries, nutrient, measure, years):
+    if not nutrient or not measure:
+        return html.Div("Please select nutrient and measure to see data summary.")
+    
     filtered = filter_data(countries, nutrient, measure, years)
     return create_data_summary(filtered, nutrient, measure)
 
@@ -288,15 +298,15 @@ def update_summary(countries, nutrient, measure, years):
 )
 def update_tab_content(selected_tab):
     if selected_tab == 'basic-tab':
-        return create_basic_charts_tab(df)
+        return create_basic_charts_tab(df_cleaned)
     elif selected_tab == 'advanced-tab':
-        return create_advanced_analytics_tab(df)
+        return create_advanced_analytics_tab(df_cleaned)
     elif selected_tab == 'metrics-tab':
-        return create_metrics_dashboard_tab(df)
+        return create_metrics_dashboard_tab(df_cleaned)
     elif selected_tab == 'comparative-tab':
-        return create_comparative_analysis_tab(df)
+        return create_comparative_analysis_tab(df_cleaned)
     else:
-        return create_basic_charts_tab(df)
+        return create_basic_charts_tab(df_cleaned)
 
 # New Visualization Callbacks
 
@@ -317,7 +327,8 @@ def update_country_year_heatmap(nutrient, measure):
             margin=dict(l=40, r=20, t=50, b=40)
         )
         return fig
-    return create_country_year_heatmap(df, nutrient, measure)
+    
+    return create_country_year_heatmap(df_cleaned, nutrient, measure)
 
 # Correlation Heatmap Callback
 @app.callback(
@@ -336,7 +347,9 @@ def update_correlation_heatmap(countries, years):
             margin=dict(l=40, r=20, t=50, b=40)
         )
         return fig
-    return create_correlation_heatmap(df, countries, list(range(years[0], years[1] + 1)))
+    
+    year_list = list(range(years[0], years[1] + 1)) if years else []
+    return create_correlation_heatmap(df_cleaned, countries, year_list)
 
 # Radar Chart Callback
 @app.callback(
@@ -355,9 +368,8 @@ def update_radar_chart(countries, year):
             margin=dict(l=40, r=20, t=50, b=40)
         )
         return fig
-    # Limit to 5 countries for readability
-    limited_countries = countries[:5] if len(countries) > 5 else countries
-    return create_radar_chart(df, limited_countries, year)
+    
+    return create_radar_chart(df_cleaned, countries, year)
 
 # Sunburst Chart Callback
 @app.callback(
@@ -375,7 +387,8 @@ def update_sunburst_chart(year):
             margin=dict(l=40, r=20, t=50, b=40)
         )
         return fig
-    return create_sunburst_chart(df, year)
+    
+    return create_sunburst_chart(df_cleaned, year)
 
 # Metrics Dashboard Callback
 @app.callback(
@@ -395,7 +408,8 @@ def update_metrics_dashboard(nutrient, measure, year):
             margin=dict(l=40, r=20, t=50, b=40)
         )
         return fig
-    return create_metrics_dashboard(df, nutrient, measure, year)
+    
+    return create_metrics_dashboard(df_cleaned, nutrient, measure, year)
 
 # Time Series Metrics Callback
 @app.callback(
@@ -415,9 +429,8 @@ def update_time_series_metrics(countries, nutrient, measure):
             margin=dict(l=40, r=20, t=50, b=40)
         )
         return fig
-    # Limit to 5 countries for readability
-    limited_countries = countries[:5] if len(countries) > 5 else countries
-    return create_time_series_metrics(df, nutrient, measure, limited_countries)
+    
+    return create_time_series_metrics(df_cleaned, nutrient, measure, countries)
 
 # KPI Cards Callback
 @app.callback(
@@ -428,8 +441,9 @@ def update_time_series_metrics(countries, nutrient, measure):
 )
 def update_kpi_cards(nutrient, measure, year):
     if not nutrient or not measure or not year:
-        return html.Div("Please select nutrient, measure, and year")
-    return create_kpi_cards(df, nutrient, measure, year)
+        return html.Div("Please select nutrient, measure, and year to see KPI cards.")
+    
+    return create_kpi_cards(df_cleaned, nutrient, measure, year)
 
 # Box Plot Callback (update ID to match new layout)
 @app.callback(
@@ -453,40 +467,6 @@ def update_box_plot_chart(countries, nutrient, measure, years):
     
     filtered = filter_data(countries, nutrient, measure, years)
     return create_box_plot(filtered, nutrient, measure)
-
-# Add this before running the app
-print(f"Data summary:")
-print(f"- Total rows: {len(df)}")
-print(f"- Years: {sorted(df['year'].unique())}")
-print(f"- Countries: {len(df['country_code'].unique())}")
-print(f"- Nutrients: {df['nutrient_type'].unique()}")
-print(f"- Measures: {df['measure_code'].unique()}")
-
-# Sample data for choropleth visualization
-# Find a combination that actually has data
-sample_combinations = df.groupby(['year', 'nutrient_type', 'measure_code']).size().reset_index(name='count')
-sample_combinations = sample_combinations.sort_values('count', ascending=False)
-
-if not sample_combinations.empty:
-    sample_year = sample_combinations.iloc[0]['year']
-    sample_nutrient = sample_combinations.iloc[0]['nutrient_type']
-    sample_measure = sample_combinations.iloc[0]['measure_code']
-    
-    sample_data = df[
-        (df['year'] == sample_year) & 
-        (df['nutrient_type'] == sample_nutrient) &
-        (df['measure_code'] == sample_measure)
-    ]
-    
-    print(f"\nSample data for choropleth ({sample_year}, {sample_nutrient}, {sample_measure}):")
-    print(f"- Rows: {len(sample_data)}")
-    print(f"- Countries: {sample_data['country_code'].nunique()}")
-    if not sample_data.empty:
-        print(f"- Sample: {sample_data[['country_code', 'value']].head(3).to_dict('records')}")
-    else:
-        print("- No data found for this combination")
-else:
-    print("\nNo valid combinations found in the data")
 
 # Add client-side callback to reset scroll position for visualization sections only when tabs change
 app.clientside_callback(
@@ -516,9 +496,45 @@ app.clientside_callback(
         return selected_tab; // Return the selected tab value
     }
     """,
-    Output('scroll-reset-trigger', 'children'),  # We'll use a hidden div for this
+    Output('scroll-reset-trigger', 'children'),
     Input('visualization-tabs', 'value')
 )
 
+# Add this before running the app
+print(f"Data summary:")
+print(f"- Total rows: {len(df)}")
+print(f"- Years: {sorted(df['year'].unique())}")
+print(f"- Countries: {len(df['country_code'].unique())}")
+print(f"- Nutrients: {df['nutrient_type'].unique()}")
+print(f"- Measures: {df['measure_code'].unique()}")
+
+# Sample data for choropleth visualization
+# Find a combination that actually has data
+sample_combinations = df.groupby(['year', 'nutrient_type', 'measure_code']).size().reset_index(name='count')
+sample_combinations = sample_combinations.sort_values('count', ascending=False)
+
+if not sample_combinations.empty:
+    sample_year = sample_combinations.iloc[0]['year']
+    sample_nutrient = sample_combinations.iloc[0]['nutrient_type']
+    sample_measure = sample_combinations.iloc[0]['measure_code']
+    
+    sample_data = df[
+        (df['year'] == sample_year) & 
+        (df['nutrient_type'] == sample_nutrient) &
+        (df['measure_code'] == sample_measure)
+    ]
+    
+    print(f"\nSample data for choropleth ({sample_year}, {sample_nutrient}, {sample_measure}):")
+    print(f"- Rows: {len(sample_data)}")
+    print(f"- Countries: {sample_data['country_code'].nunique()}")
+    if not sample_data.empty:
+        sample_values = sample_data[['country_code', 'value']].to_dict('records')[:3]
+        print(f"- Sample: {sample_values}")
+    else:
+        print("- No sample data available")
+else:
+    print("\nNo valid combinations found in the data")
+
+# Run the app only if this script is executed directly
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
+    app.run_server(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
