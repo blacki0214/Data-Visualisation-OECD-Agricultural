@@ -537,4 +537,4 @@ else:
 
 # Run the app only if this script is executed directly
 if __name__ == '__main__':
-    app.run_server(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
