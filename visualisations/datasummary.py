@@ -14,7 +14,22 @@ def create_data_summary(filtered_df, nutrient, measure):
     - Dash HTML component
     """
     if filtered_df.empty:
-        return html.P("No data available for the selected filters.")
+        return html.Div([
+            html.Div([
+                html.I(className="fas fa-exclamation-triangle", 
+                       style={'fontSize': '48px', 'color': '#ffd43b', 'marginBottom': '15px'}),
+                html.H4("No Data Available", 
+                        style={'color': '#f2f2f2', 'marginBottom': '10px'}),
+                html.P("Please adjust your filters to see data analysis.",
+                       style={'color': '#a9a9a9', 'fontSize': '14px'})
+            ], style={
+                'textAlign': 'center',
+                'padding': '40px',
+                'backgroundColor': 'rgba(40, 45, 65, 0.6)',
+                'borderRadius': '8px',
+                'border': '1px solid rgba(255, 255, 255, 0.1)'
+            })
+        ])
     
     # Get unit information
     unit = filtered_df['unit'].iloc[0] if 'unit' in filtered_df.columns and not filtered_df['unit'].isna().iloc[0] else ''
@@ -77,27 +92,139 @@ def create_data_summary(filtered_df, nutrient, measure):
         else:
             return f"{val:.2f} {unit_display}"
     
-    # Create summary
+    # Create modern card-based summary that matches the dashboard design
     summary = [
+        # Title Section
+        html.Div([
+            html.H3("📊 Data Analysis Summary", 
+                   style={
+                       'color': '#4a9eff', 
+                       'marginBottom': '20px', 
+                       'textAlign': 'center',
+                       'fontSize': '20px',
+                       'fontWeight': '600'
+                   })
+        ]),
+        
+        # Key Statistics Cards Row
+        html.Div([
+            # Min Value Card
+            html.Div([
+                html.Div([
+                    html.Div([
+                        html.Span(format_value_with_unit(min_val, unit), className="metric-value", style={'fontSize': '18px'}),
+                        html.I(className="fas fa-arrow-down metric-icon", style={'color': '#ff6b6b'})
+                    ]),
+                    html.Div("MINIMUM VALUE", className="metric-label"),
+                    html.Div(f"Country: {min_country}", style={'fontSize': '12px', 'color': '#a9a9a9', 'marginTop': '5px'})
+                ])
+            ], className="metric-card", style={'backgroundColor': 'rgba(255, 107, 107, 0.1)', 'border': '1px solid rgba(255, 107, 107, 0.3)'}),
+            
+            # Max Value Card
+            html.Div([
+                html.Div([
+                    html.Div([
+                        html.Span(format_value_with_unit(max_val, unit), className="metric-value", style={'fontSize': '18px'}),
+                        html.I(className="fas fa-arrow-up metric-icon", style={'color': '#51cf66'})
+                    ]),
+                    html.Div("MAXIMUM VALUE", className="metric-label"),
+                    html.Div(f"Country: {max_country}", style={'fontSize': '12px', 'color': '#a9a9a9', 'marginTop': '5px'})
+                ])
+            ], className="metric-card", style={'backgroundColor': 'rgba(81, 207, 102, 0.1)', 'border': '1px solid rgba(81, 207, 102, 0.3)'}),
+            
+            # Average Value Card
+            html.Div([
+                html.Div([
+                    html.Div([
+                        html.Span(format_value_with_unit(avg_val, unit), className="metric-value", style={'fontSize': '18px'}),
+                        html.I(className="fas fa-chart-line metric-icon", style={'color': '#4a9eff'})
+                    ]),
+                    html.Div("AVERAGE VALUE", className="metric-label"),
+                    html.Div(f"Median: {format_value_with_unit(median_val, unit)}", style={'fontSize': '12px', 'color': '#a9a9a9', 'marginTop': '5px'})
+                ])
+            ], className="metric-card", style={'backgroundColor': 'rgba(74, 158, 255, 0.1)', 'border': '1px solid rgba(74, 158, 255, 0.3)'}),
+            
+            # Data Points Card
+            html.Div([
+                html.Div([
+                    html.Div([
+                        html.Span(f"{len(filtered_df)}", className="metric-value", style={'fontSize': '18px'}),
+                        html.I(className="fas fa-database metric-icon", style={'color': '#ffd43b'})
+                    ]),
+                    html.Div("DATA POINTS", className="metric-label"),
+                    html.Div(f"Countries: {filtered_df['country_code'].nunique()}", style={'fontSize': '12px', 'color': '#a9a9a9', 'marginTop': '5px'})
+                ])
+            ], className="metric-card", style={'backgroundColor': 'rgba(255, 212, 59, 0.1)', 'border': '1px solid rgba(255, 212, 59, 0.3)'})
+        ], className="card-container", style={'marginBottom': '25px'}),
+        
+        # Detailed Information Section
         html.Div([
             html.Div([
-                html.H4("Statistics", style={'textAlign': 'center'}),
-                html.P(f"Minimum Value: {format_value_with_unit(min_val, unit)} ({min_country})"),
-                html.P(f"Maximum Value: {format_value_with_unit(max_val, unit)} ({max_country})"),
-                html.P(f"Average Value: {format_value_with_unit(avg_val, unit)}"),
-                html.P(f"Median Value: {format_value_with_unit(median_val, unit)}"),
-                html.P(f"Standard Deviation: {format_value_with_unit(std_val, unit)}")
-            ], style={'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top'}),
-            
-            html.Div([
-                html.H4("Dataset Info", style={'textAlign': 'center'}),
-                html.P(f"Number of Countries: {filtered_df['country_code'].nunique()}"),
-                html.P(f"Year Range: {filtered_df['year'].min()} - {filtered_df['year'].max()}"),
-                html.P(f"Nutrient: {nutrient}"),
-                html.P(f"Measure: {measure_desc}"),
-                html.P(f"Unit: {unit_display}"),
-                html.P(f"Total Data Points: {len(filtered_df)}")
-            ], style={'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top'})
+                # Statistical Analysis Panel
+                html.Div([
+                    html.Div([
+                        html.H4([
+                            html.I(className="fas fa-chart-bar", style={'marginRight': '8px', 'color': '#4a9eff'}),
+                            "Statistical Analysis"
+                        ], style={'color': '#f2f2f2', 'marginBottom': '15px', 'fontSize': '16px'}),
+                        
+                        html.Div([
+                            html.Div([
+                                html.Span("Standard Deviation", style={'fontWeight': 'bold', 'color': '#a9a9a9'}),
+                                html.Span(format_value_with_unit(std_val, unit), style={'float': 'right', 'color': '#f2f2f2'})
+                            ], style={'marginBottom': '8px', 'borderBottom': '1px solid rgba(255,255,255,0.1)', 'paddingBottom': '8px'}),
+                            
+                            html.Div([
+                                html.Span("Year Range", style={'fontWeight': 'bold', 'color': '#a9a9a9'}),
+                                html.Span(f"{filtered_df['year'].min()} - {filtered_df['year'].max()}", style={'float': 'right', 'color': '#f2f2f2'})
+                            ], style={'marginBottom': '8px', 'borderBottom': '1px solid rgba(255,255,255,0.1)', 'paddingBottom': '8px'}),
+                            
+                            html.Div([
+                                html.Span("Unit", style={'fontWeight': 'bold', 'color': '#a9a9a9'}),
+                                html.Span(unit_display, style={'float': 'right', 'color': '#f2f2f2'})
+                            ], style={'marginBottom': '8px'})
+                        ])
+                    ], style={
+                        'backgroundColor': 'rgba(40, 45, 65, 0.6)',
+                        'padding': '20px',
+                        'borderRadius': '8px',
+                        'border': '1px solid rgba(255, 255, 255, 0.1)'
+                    })
+                ], style={'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top'}),
+                
+                # Data Information Panel
+                html.Div([
+                    html.Div([
+                        html.H4([
+                            html.I(className="fas fa-info-circle", style={'marginRight': '8px', 'color': '#4a9eff'}),
+                            "Data Information"
+                        ], style={'color': '#f2f2f2', 'marginBottom': '15px', 'fontSize': '16px'}),
+                        
+                        html.Div([
+                            html.Div([
+                                html.Span("Nutrient Type", style={'fontWeight': 'bold', 'color': '#a9a9a9'}),
+                                html.Span(nutrient, style={'float': 'right', 'color': '#f2f2f2'})
+                            ], style={'marginBottom': '8px', 'borderBottom': '1px solid rgba(255,255,255,0.1)', 'paddingBottom': '8px'}),
+                            
+                            html.Div([
+                                html.Span("Measure", style={'fontWeight': 'bold', 'color': '#a9a9a9'}),
+                                html.Span(measure_desc[:50] + "..." if len(str(measure_desc)) > 50 else measure_desc, 
+                                         style={'float': 'right', 'color': '#f2f2f2', 'textAlign': 'right', 'maxWidth': '60%'})
+                            ], style={'marginBottom': '8px', 'borderBottom': '1px solid rgba(255,255,255,0.1)', 'paddingBottom': '8px'}),
+                            
+                            html.Div([
+                                html.Span("Coverage", style={'fontWeight': 'bold', 'color': '#a9a9a9'}),
+                                html.Span(f"{filtered_df['country_code'].nunique()} Countries", style={'float': 'right', 'color': '#f2f2f2'})
+                            ], style={'marginBottom': '8px'})
+                        ])
+                    ], style={
+                        'backgroundColor': 'rgba(40, 45, 65, 0.6)',
+                        'padding': '20px',
+                        'borderRadius': '8px',
+                        'border': '1px solid rgba(255, 255, 255, 0.1)'
+                    })
+                ], style={'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginLeft': '4%'})
+            ])
         ])
     ]
     

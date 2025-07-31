@@ -6,8 +6,19 @@ body {
     margin: 0;
 }
 
+/* Ensure all text is visible by default */
+* {
+    color: inherit;
+}
+
 .dashboard-container {
     padding: 20px;
+    color: #f2f2f2;
+    margin-bottom: 50px;
+}
+
+.dashboard-container * {
+    color: inherit;
 }
 
 .dashboard-header {
@@ -28,6 +39,67 @@ body {
     margin-top: 0;
 }
 
+/* Tooltip Styles */
+.chart-tooltip {
+    position: relative;
+    display: inline-block;
+    margin-left: 8px;
+}
+
+.chart-tooltip .tooltiptext {
+    visibility: hidden;
+    width: 300px;
+    background-color: rgba(40, 45, 65, 0.95);
+    color: #f2f2f2;
+    text-align: left;
+    border-radius: 6px;
+    padding: 12px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -150px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    line-height: 1.4;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.chart-tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(40, 45, 65, 0.95) transparent transparent transparent;
+}
+
+.chart-tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+.info-icon {
+    color: #4a9eff;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.chart-description {
+    background-color: rgba(40, 45, 65, 0.5);
+    border-left: 3px solid #4a9eff;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #b8c5d6;
+    line-height: 1.5;
+}
+
 .card-container {
     display: flex;
     flex-wrap: wrap;
@@ -43,6 +115,7 @@ body {
     flex: 1;
     min-width: 200px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #f2f2f2; /* Ensure text visibility */
 }
 
 .metric-card:hover {
@@ -52,29 +125,34 @@ body {
 
 .metric-card.cyan {
     background: linear-gradient(135deg, rgba(0, 156, 172, 0.9), rgba(0, 124, 137, 0.9));
+    color: #ffffff; /* Force white text */
 }
 
 .metric-card.coral {
     background: linear-gradient(135deg, rgba(242, 102, 102, 0.9), rgba(204, 85, 85, 0.9));
+    color: #ffffff; /* Force white text */
 }
 
 .metric-card.amber {
     background: linear-gradient(135deg, rgba(255, 178, 43, 0.9), rgba(204, 142, 34, 0.9));
+    color: #ffffff; /* Force white text */
 }
 
 .metric-card.purple {
     background: linear-gradient(135deg, rgba(133, 92, 248, 0.9), rgba(112, 78, 209, 0.9));
+    color: #ffffff; /* Force white text */
 }
 
 .metric-value {
     font-size: 30px;
     font-weight: 700;
     margin-bottom: 8px;
+    color: #ffffff !important; /* Force white text */
 }
 
 .metric-label {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.9) !important; /* Increase opacity */
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -89,7 +167,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
 }
 
 .chart-container {
@@ -98,13 +176,21 @@ body {
     padding: 15px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     flex: 1 1 calc(50% - 20px);
-    min-height: 350px;
-    margin-bottom: 20px;
+    min-height: 500px;
+    max-height: 600px;
+    margin-bottom: 30px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .chart-container.full-width {
     flex: 0 0 100%;
     max-width: 100%;
+    min-height: 600px;
+    max-height: 700px;
+    margin-bottom: 30px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .chart-header {
@@ -191,6 +277,13 @@ body {
     white-space: normal; /* Allow text wrapping if needed */
     word-wrap: break-word;
     line-height: 1.4;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dash-dropdown .Select-option:hover,
+.dash-dropdown .Select-option.is-focused {
+    background-color: #4a9eff !important;
+    color: #ffffff !important;
 }
 
 .dash-dropdown .Select-value-label {
@@ -227,12 +320,21 @@ body {
 /* Fix for placeholder and value text */
 .dash-dropdown .Select-placeholder,
 .dash-dropdown .Select--single > .Select-control .Select-value {
-    color: rgba(255, 255, 255, 0.5) !important;
+    color: #f2f2f2 !important; /* Changed from rgba to solid color */
     padding-left: 10px;
     padding-right: 10px;
 }
 
 .dash-dropdown .Select-value-label {
+    color: #f2f2f2 !important;
+}
+
+/* Fix for selected value visibility */
+.dash-dropdown .Select--single .Select-value {
+    color: #f2f2f2 !important;
+}
+
+.dash-dropdown .Select-input input {
     color: #f2f2f2 !important;
 }
 
@@ -335,21 +437,37 @@ body {
 
 /* Custom styling for region dropdown */
 .region-dropdown .Select-control {
-    background-color: #252e3f;
-    color: white;
+    background-color: #252e3f !important;
+    color: #f2f2f2 !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
 .region-dropdown .Select-value-label {
-    color: white !important;
+    color: #f2f2f2 !important;
+}
+
+.region-dropdown .Select-placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
 }
 
 .region-dropdown .Select-menu-outer {
-    background-color: #252e3f;
-    border: 1px solid #666666;
+    background-color: #252e3f !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
 .region-dropdown .Select-option {
-    background-color: #252e3f;
+    background-color: #252e3f !important;
+    color: #f2f2f2 !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.region-dropdown .Select-option:hover,
+.region-dropdown .Select-option.is-focused {
+    background-color: #4a9eff !important;
+    color: #ffffff !important;
+}
     color: white;
 }
 
@@ -374,3 +492,219 @@ body {
     border-color: white transparent transparent;
 }
 
+/* Tab Styles */
+.tabs-wrapper {
+    margin: 20px 0;
+    background: rgba(38, 45, 65, 0.8);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.tabs-container {
+    margin-bottom: 20px;
+}
+
+.tab-style {
+    background-color: rgba(55, 65, 95, 0.8) !important;
+    color: #f2f2f2 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 12px 20px !important;
+    margin-right: 5px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.tab-style:hover {
+    background-color: rgba(75, 85, 115, 0.9) !important;
+    transform: translateY(-2px);
+}
+
+.tab-selected {
+    background: linear-gradient(135deg, #4a90e2, #357abd) !important;
+    color: white !important;
+    border-color: #4a90e2 !important;
+    box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+}
+
+#tab-content {
+    background: rgba(30, 33, 48, 0.8);
+    border-radius: 8px;
+    padding: 20px;
+    min-height: 600px;
+}
+
+/* KPI Card Styles */
+.kpi-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 240, 240, 0.95)); /* Light background for black text */
+    border: 1px solid rgba(74, 144, 226, 0.3);
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    min-width: 150px;
+    margin: 10px;
+    color: #000000; /* Black text */
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
+}
+
+.kpi-card h3 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #000000 !important; /* Changed to black text */
+}
+
+.kpi-card p {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.9; /* Increase opacity for better visibility */
+    font-weight: 500;
+    color: #000000 !important; /* Changed to black text */
+}
+
+/* Fix for any nested text elements in KPI cards */
+.kpi-card * {
+    color: #000000 !important; /* Changed to black text */
+}
+
+/* Enhanced Chart Container for Full Width */
+.chart-container.full-width {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+}
+
+/* Footer spacing */
+footer {
+    margin-top: 50px !important;
+    padding: 20px 0 !important;
+    clear: both;
+}
+
+/* Ensure proper spacing for tabs content */
+#tab-content {
+    margin-bottom: 50px;
+}
+
+/* Custom scrollbar styling for chart containers */
+.chart-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chart-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.chart-container::-webkit-scrollbar-thumb {
+    background: rgba(74, 144, 226, 0.6);
+    border-radius: 4px;
+}
+
+.chart-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(74, 144, 226, 0.8);
+}
+
+/* Scrollable section styling */
+.scrollable-section {
+    max-height: 80vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px;
+}
+
+.scrollable-section::-webkit-scrollbar {
+    width: 10px;
+}
+
+.scrollable-section::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+}
+
+.scrollable-section::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #4a90e2, #357abd);
+    border-radius: 5px;
+}
+
+.scrollable-section::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #357abd, #2a5f94);
+}
+
+/* Responsive Design for Tabs */
+@media (max-width: 768px) {
+    .tabs-container .tab-style {
+        font-size: 12px !important;
+        padding: 8px 12px !important;
+    }
+    
+    .kpi-card {
+        min-width: 120px;
+        padding: 15px;
+    }
+    
+    .kpi-card h3 {
+        font-size: 22px;
+    }
+    
+    #tab-content {
+        padding: 15px;
+    }
+}
+
+/* Enhanced Metric Cards for New Layout */
+.metric-card.cyan { border-left: 4px solid #26c6da; }
+.metric-card.coral { border-left: 4px solid #ff7043; }
+.metric-card.amber { border-left: 4px solid #ffb74d; }
+.metric-card.purple { border-left: 4px solid #ba68c8; }
+
+/* Improved Chart Headers */
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f2f2f2;
+}
+
+.chart-date {
+    font-size: 12px;
+    color: #a9a9a9;
+    font-style: italic;
+}
+
+/* Loading States */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    background: rgba(38, 45, 65, 0.5);
+    border-radius: 8px;
+}
+
+.loading-spinner {
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid #4a90e2;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

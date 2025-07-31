@@ -1,4 +1,5 @@
 from dash import html, dcc, dash_table
+from utils.measure_descriptions import get_measure_description, format_measure_label
 
 def get_country_names():
     """
@@ -74,11 +75,28 @@ def is_actual_country(country_code):
     return country_code not in excluded_entities
 
 def create_layout(df):
-    # Calculate some metrics for the dashboard cards
-    total_countries = df['country_code'].nunique()
+    # Calculate meaningful metrics for the dashboard cards
+    
+    # Get actual countries (excluding regional entities)
+    actual_countries = [code for code in df['country_code'].unique() if is_actual_country(code)]
+    total_countries = len(actual_countries)
+    
+    # Get total measures
     total_measures = df['measure_code'].nunique()
+    
+    # Get year range
     year_range = f"{df['year'].min()}-{df['year'].max()}"
-    avg_value = round(df['value'].mean(), 1)
+    
+    # Calculate total data points for a cleaner metric
+    total_records = len(df)
+    
+    # Format total records for display
+    if total_records >= 1000000:
+        formatted_records = f"{total_records/1000000:.1f}M"
+    elif total_records >= 1000:
+        formatted_records = f"{total_records/1000:.0f}K"
+    else:
+        formatted_records = str(total_records)
     
     # Get country mapping
     country_names = get_country_names()
@@ -129,10 +147,10 @@ def create_layout(df):
         html.Div([
             html.Div([
                 html.Div([
-                    html.Span(f"{avg_value}", className="metric-value"),
-                    html.I(className="fas fa-money-bill metric-icon")
+                    html.Span(formatted_records, className="metric-value"),
+                    html.I(className="fas fa-database metric-icon")
                 ]),
-                html.Div("AVERAGE VALUE", className="metric-label"),
+                html.Div("DATA RECORDS", className="metric-label"),
                 html.Div([
                     html.Div(className="mini-chart"),
                     html.Div([
@@ -144,7 +162,7 @@ def create_layout(df):
             
             html.Div([
                 html.Div([
-                    html.Span(f"{len(country_options)}", className="metric-value"),  # Show actual country count
+                    html.Span(f"{total_countries}", className="metric-value"),
                     html.I(className="fas fa-globe metric-icon")
                 ]),
                 html.Div("COUNTRIES", className="metric-label"),
@@ -234,143 +252,42 @@ def create_layout(df):
                         }
                     )
                 ], className="filter-item"),
-            ], className="filter-row"),
-            
-            html.Div([
-                html.Label("Year Range", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '10px', 'display': 'block'}),
-                dcc.RangeSlider(
-                    id='year-slider',
-                    min=2012,  # Fixed to actual data range
-                    max=2022,  # Fixed to actual data range
-                    step=1,
-                    marks={i: str(i) for i in range(2012, 2023, 2)},  # Show marks every 2 years
-                    value=[2012, 2022]  # Default to full range
-                )
-            ]),
-        ], className="controls-container"),
-        
-        # Charts Row 1
-        html.Div([
-            # Time Series Chart
-            html.Div([
-                html.Div([
-                    html.Div([
-                        html.Span("Time Series Analysis", className="chart-title"),
-                        html.Span(f"February 2023", className="chart-date")
-                    ], className="chart-header"),
-                    html.Div([
-                        html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
-                        html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
-                    ], className="chart-actions")
-                ], className="chart-header"),
-                dcc.Graph(id='time-series-chart', style={'height': '300px'})
-            ], className="chart-container"),
-            
-            # Choropleth Map
-            html.Div([
-                html.Div([
-                    html.Div([
-                        html.Span("Geographic Distribution", className="chart-title"),
-                        html.Span(f"February 2023", className="chart-date")
-                    ], className="chart-header"),
-                    html.Div([
-                        html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
-                        html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
-                    ], className="chart-actions")
-                ], className="chart-header"),
                 
-                # Add this dropdown for year selection
                 html.Div([
-                    html.Label("Select Map Year", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '5px', 'fontSize': '12px'}),
-                    dcc.Dropdown(
-                        id='map-year-dropdown',
-                        options=[{'label': str(y), 'value': y} for y in sorted(df['year'].unique())],
-                        value=df['year'].max() if not df.empty else 2020,
-                        clearable=False,
-                        className="dash-dropdown",
-                        style={
-                            'color': '#000000',
-                            'backgroundColor': '#252e3f'
-                        }
-                    )
-                ], style={'marginBottom': '15px'}),
-                
-                # EU Data Handling Section
-                html.Div([
-                    html.Label("EU Data Handling", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '5px', 'fontSize': '12px'}),
+                    html.Label("EU Data Handling", style={'fontWeight': 'bold', 'color': '#f2f2f2'}),
                     dcc.RadioItems(
                         id='eu-data-option',
+                        options=[
+                            {'label': 'Distribute EU data to member countries', 'value': 'distribute'},
+                            {'label': 'Show EU as separate entity', 'value': 'separate'},
+                            {'label': 'Exclude EU data', 'value': 'exclude'}
+                        ],
                         value='distribute',
                         labelStyle={'display': 'block', 'margin': '5px 0', 'fontSize': '12px'},
                         style={'color': '#f2f2f2'}
                     )
-                ], style={'marginBottom': '15px', 'marginTop': '10px'}),
+                ], className="filter-item"),
+            ], className="filter-row"),
             
+            html.Div([
+                html.Div([
+                    html.Label("Year Range", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '10px', 'display': 'block'}),
+                    dcc.RangeSlider(
+                        id='year-slider',
+                        min=2012,  # Fixed to actual data range
+                        max=2022,  # Fixed to actual data range
+                        step=1,
+                        marks={i: str(i) for i in range(2012, 2023, 2)},  # Show marks every 2 years
+                        value=[2012, 2022]  # Default to full range
+                    )
+                ], style={'width': '70%', 'display': 'inline-block'}),
                 
-                dcc.Graph(id='choropleth-map', style={'height': '300px'})
-            ], className="chart-container"),
-        ], className="chart-row"),
-        
-        # NEW Combined Chart Row
-        html.Div([
-            html.Div([
                 html.Div([
-                    html.Div([
-                        html.Span("Trends & Averages", className="chart-title"),
-                        html.Span(f"February 2023", className="chart-date")
-                    ], className="chart-header"),
-                    html.Div([
-                        html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
-                        html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
-                    ], className="chart-actions")
-                ], className="chart-header"),
-                dcc.Graph(id='combined-chart', style={'height': '300px'})
-            ], className="chart-container full-width")  # Use full width for this chart
-        ], className="chart-row"),
-        
-        # Charts Row 2
-        html.Div([
-            # Bar Chart
-            html.Div([
-                html.Div([
-                    html.Div([
-                        html.Span("Country Comparisons", className="chart-title"),
-                        html.Span(f"February 2023", className="chart-date")
-                    ], className="chart-header"),
-                    html.Div([
-                        html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
-                        html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
-                    ], className="chart-actions")
-                ], className="chart-header"),
-                dcc.Graph(id='bar-chart', style={'height': '300px'})
-            ], className="chart-container"),   
-        ], className="chart-row"),
-        
-        # NEW Charts Row 3 - Add Scatter Plot
-        html.Div([
-            # Scatter Plot
-            html.Div([
-                html.Div([
-                    html.Div([
-                        html.Span("Scatter Plot Analysis", className="chart-title"),
-                        html.Span(f"February 2023", className="chart-date")
-                    ], className="chart-header"),
-                    html.Div([
-                        html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
-                        html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
-                    ], className="chart-actions")
-                ], className="chart-header"),
-                
-                # Add X-axis selector for scatter plot
-                html.Div([
-                    html.Label("X-Axis Variable", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '5px', 'fontSize': '12px'}),
+                    html.Label("Map Year", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '10px', 'display': 'block'}),
                     dcc.Dropdown(
-                        id='x-axis-dropdown',
-                        options=[
-                            {'label': 'Year', 'value': 'year'},
-                            {'label': 'Value Distribution', 'value': 'value'}
-                        ],
-                        value='year',
+                        id='map-year-dropdown',
+                        options=[{'label': str(y), 'value': y} for y in sorted(df['year'].unique())],
+                        value=df['year'].min() if not df.empty else 2012,
                         clearable=False,
                         className="dash-dropdown",
                         style={
@@ -378,62 +295,72 @@ def create_layout(df):
                             'backgroundColor': '#252e3f'
                         }
                     )
-                ], style={'marginBottom': '15px'}),
-                
-                dcc.Graph(id='scatter-chart', style={'height': '300px'})
-            ], className="chart-container full-width")
-        ], className="chart-row"),
-
-        # Data Table & Summary
+                ], style={'width': '25%', 'display': 'inline-block', 'marginLeft': '5%'}),
+            ], style={'display': 'flex', 'alignItems': 'end', 'gap': '20px'}),
+        ], className="controls-container"),
+        
+        # Help Section
         html.Div([
-            html.Div([
+            html.Details([
+                html.Summary([
+                    html.I(className="fas fa-question-circle", style={'marginRight': '8px'}),
+                    "📊 How to Use This Dashboard - Click for Help"
+                ], style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#4a9eff', 'cursor': 'pointer', 'padding': '10px'}),
                 html.Div([
                     html.Div([
-                        html.Span("Data Summary", className="chart-title"),
-                        html.Span(f"February 2023", className="chart-date")
-                    ], className="chart-header"),
+                        html.H4("🎯 Getting Started", style={'color': '#4a9eff', 'marginTop': '0'}),
+                        html.P("1. Use the controls above to filter data by country, nutrient type, measure, and year"),
+                        html.P("2. Navigate through different tabs to explore various visualization types"),
+                        html.P("3. Hover over charts for detailed information and insights"),
+                    ], style={'marginBottom': '15px'}),
+                    
                     html.Div([
-                        html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn")
-                    ], className="chart-actions")
-                ], className="chart-header"),
-                html.Div(id='data-summary', className="summary-content")
-            ], className="chart-container"),
+                        html.H4("📈 Chart Types Explained", style={'color': '#4a9eff'}),
+                        html.Ul([
+                            html.Li("🗺️ Geographic Maps: Show data distribution across countries"),
+                            html.Li("📊 Time Series: Track changes over time"),
+                            html.Li("📈 Bar Charts: Compare countries side-by-side"),
+                            html.Li("📦 Box Plots: Understand data distribution and outliers"),
+                            html.Li("🔥 Heatmaps: Spot patterns across countries and years"),
+                            html.Li("🕸️ Radar Charts: Multi-dimensional country comparisons"),
+                            html.Li("☀️ Sunburst Charts: Explore data hierarchically"),
+                            html.Li("💹 Scatter Plots: Discover relationships between variables"),
+                        ], style={'fontSize': '13px'}),
+                    ], style={'marginBottom': '15px'}),
+                    
+                    html.Div([
+                        html.H4("🔍 Key Metrics", style={'color': '#4a9eff'}),
+                        html.P("• Agricultural land use and production indicators"),
+                        html.P("• Greenhouse gas emissions (CO2, CH4, N2O)"),
+                        html.P("• Water and energy consumption"),
+                        html.P("• Pesticide and fertilizer applications"),
+                        html.P("• Environmental sustainability metrics"),
+                    ], style={'fontSize': '13px'})
+                ], style={
+                    'backgroundColor': 'rgba(40, 45, 65, 0.5)',
+                    'padding': '15px',
+                    'borderRadius': '6px',
+                    'marginTop': '10px',
+                    'border': '1px solid rgba(255, 255, 255, 0.1)'
+                })
+            ])
+        ], style={'margin': '15px 0'}),
+        
+        # Visualization Tabs
+        html.Div([
+            dcc.Tabs(id="visualization-tabs", value='basic-tab', children=[
+                dcc.Tab(label='Basic Charts', value='basic-tab', className='tab-style', selected_className='tab-selected'),
+                dcc.Tab(label='Advanced Analytics', value='advanced-tab', className='tab-style', selected_className='tab-selected'),
+                dcc.Tab(label='Metrics Dashboard', value='metrics-tab', className='tab-style', selected_className='tab-selected'),
+                dcc.Tab(label='Comparative Analysis', value='comparative-tab', className='tab-style', selected_className='tab-selected'),
+            ], className='tabs-container'),
             
-            html.Div([
-                html.Div([
-                    html.Div([
-                        html.Span("Filtered Data", className="chart-title"),
-                        html.Span(f"February 2023", className="chart-date")
-                    ], className="chart-header"),
-                    html.Div([
-                        html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn")
-                    ], className="chart-actions")
-                ], className="chart-header"),
-                dash_table.DataTable(
-                    id='data-table',
-                    columns=[{"name": i, "id": i} for i in df.columns],
-                    page_size=10,
-                    style_table={'overflowX': 'auto'},
-                    style_cell={
-                        'backgroundColor': 'rgba(38, 45, 65, 1)',
-                        'color': '#f2f2f2',
-                        'padding': '10px',
-                        'textAlign': 'left'
-                    },
-                    style_header={
-                        'backgroundColor': 'rgba(30, 33, 48, 1)',
-                        'fontWeight': 'bold',
-                        'padding': '10px'
-                    },
-                    style_data_conditional=[
-                        {'if': {'row_index': 'odd'},
-                         'backgroundColor': 'rgba(44, 52, 75, 1)'}
-                    ],
-                    filter_action="native",
-                    sort_action="native",
-                )
-            ], className="chart-container"),
-        ], className="chart-row"),
+            # Hidden div for scroll reset trigger
+            html.Div(id='scroll-reset-trigger', style={'display': 'none'}),
+            
+            # Tab Content
+            html.Div(id='tab-content')
+        ], className="tabs-wrapper"),
         
         # Note about data representation
         html.Div([
@@ -450,3 +377,365 @@ def create_layout(df):
         ], style={'textAlign': 'center', 'marginTop': 30, 'color': '#a9a9a9'})
         
     ], className="dashboard-container")
+
+def create_basic_charts_tab(df):
+    """Create the basic charts tab content"""
+    return html.Div([
+        # Scrollable container for Basic Charts
+        html.Div([
+            # Charts Row 1
+            html.Div([
+                # Time Series Chart
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Time Series Analysis", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Track how agricultural metrics change over time. Each line represents a different country, showing trends from 2012-2023. Use this to identify long-term patterns and seasonal variations.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Real-time Data", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Visualize how metrics evolve over time. Perfect for identifying trends, seasonal patterns, and comparing country performance across years."
+                    ], className="chart-description"),
+                    dcc.Graph(id='time-series-chart', style={'height': '350px'})
+                ], className="chart-container"),
+                
+                # Choropleth Map
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Geographic Distribution", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Shows how agricultural and environmental metrics vary across different countries. Darker colors indicate higher values. Use the controls to explore different years, nutrients, and measures.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Interactive Map", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "This map visualizes OECD agricultural data geographically. Darker colors indicate higher values. Perfect for identifying regional patterns and comparing countries at a glance."
+                    ], className="chart-description"),
+                    dcc.Graph(id='choropleth-map', style={'height': '350px'})
+                ], className="chart-container"),
+            ], className="chart-row"),
+            
+            # Charts Row 2
+            html.Div([
+                # Bar Chart
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Country Comparisons", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Compare values across countries for the selected year and metric. Bars are sorted by value to easily identify top and bottom performers.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Top Countries", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Direct country-to-country comparison for a specific year and metric. Easily spot leaders and laggards in agricultural performance."
+                    ], className="chart-description"),
+                    dcc.Graph(id='bar-chart', style={'height': '350px'})
+                ], className="chart-container"),
+                
+                # Box Plot
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Distribution Analysis", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Box plots show data distribution including median (middle line), quartiles (box edges), range (whiskers), and outliers (dots). The box contains 50% of the data.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Statistical Overview", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Understand data distribution patterns. The box shows the middle 50% of values, lines extend to min/max, and outliers appear as individual points."
+                    ], className="chart-description"),
+                    dcc.Graph(id='box-plot-chart', style={'height': '350px'})
+                ], className="chart-container"),
+            ], className="chart-row"),
+        ], className="scrollable-section"),
+    ])
+
+def create_advanced_analytics_tab(df):
+    """Create the advanced analytics tab content"""
+    return html.Div([
+        # Scrollable container for Advanced Analytics
+        html.Div([
+            # Heatmaps Row
+            html.Div([
+                # Country-Year Heatmap
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Country-Year Heatmap", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("A heat map showing values across countries (rows) and years (columns). Darker colors indicate higher values. Perfect for spotting temporal and geographical patterns simultaneously.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Temporal Patterns", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Visualize how values change across both countries and time. Each cell represents a country-year combination, making it easy to spot trends and outliers."
+                    ], className="chart-description"),
+                    dcc.Graph(id='country-year-heatmap', style={'height': '450px'})
+                ], className="chart-container"),
+                
+                # Correlation Heatmap
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Correlation Matrix", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Shows relationships between different nutrients and measures. Values range from -1 (strong negative correlation) to +1 (strong positive correlation). Colors indicate correlation strength.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Nutrient Relationships", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Discover relationships between different agricultural metrics. Strong correlations (dark colors) indicate variables that tend to move together."
+                    ], className="chart-description"),
+                    dcc.Graph(id='correlation-heatmap', style={'height': '450px'})
+                ], className="chart-container"),
+            ], className="chart-row"),
+            
+            # Radar and Sunburst Row
+            html.Div([
+                # Radar Chart
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Multi-Dimensional Analysis", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Radar charts compare countries across multiple metrics simultaneously. Each axis represents a different measure, and the polygon shows a country's performance profile. Larger areas indicate better overall performance.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Radar Chart", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Compare countries across multiple dimensions at once. Each spoke represents a different metric, making it easy to see performance profiles and identify strengths/weaknesses."
+                    ], className="chart-description"),
+                    dcc.Graph(id='radar-chart', style={'height': '450px'})
+                ], className="chart-container"),
+                
+                # Sunburst Chart
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Hierarchical Breakdown", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Sunburst charts show hierarchical data in concentric circles. Inner rings represent broader categories (continents/regions), while outer rings show detailed breakdowns (countries, nutrients). Click segments to drill down.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Sunburst Chart", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Explore data hierarchically from global patterns to specific details. Start from the center and move outward to drill down from continents to countries to specific metrics."
+                    ], className="chart-description"),
+                    dcc.Graph(id='sunburst-chart', style={'height': '450px'})
+                ], className="chart-container"),
+            ], className="chart-row"),
+        ], className="scrollable-section"),
+    ])
+
+def create_metrics_dashboard_tab(df):
+    """Create the metrics dashboard tab content"""
+    return html.Div([
+        # Scrollable container for Metrics Dashboard
+        html.Div([
+            # KPI Cards
+            html.Div([
+                html.Div([
+                    "The KPI cards below provide quick insights into key agricultural metrics. Each card shows current values, trends, and comparisons to help you understand performance at a glance."
+                ], className="chart-description"),
+            ]),
+            html.Div(id='kpi-cards', style={'margin': '20px 0'}),
+            
+            # Metrics Dashboard
+            html.Div([
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Comprehensive Metrics", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("A comprehensive view of key agricultural and environmental metrics. This dashboard combines multiple indicators to provide a holistic view of agricultural performance and sustainability.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Key Performance Indicators", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "View multiple agricultural metrics in one comprehensive dashboard. Perfect for getting a complete picture of agricultural and environmental performance."
+                    ], className="chart-description"),
+                    dcc.Graph(id='metrics-dashboard', style={'height': '550px'})
+                ], className="chart-container full-width"),
+            ], className="chart-row"),
+            
+            # Time Series Metrics
+            html.Div([
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Time Series Metrics", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Track how key agricultural metrics evolve over time. This visualization helps identify trends, cycles, and turning points in agricultural and environmental indicators.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Trend Analysis", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Monitor metric trends over time to understand long-term patterns and identify areas of improvement or concern in agricultural sustainability."
+                    ], className="chart-description"),
+                    dcc.Graph(id='time-series-metrics', style={'height': '550px'})
+                ], className="chart-container full-width"),
+            ], className="chart-row"),
+        ], className="scrollable-section"),
+    ])
+
+def create_comparative_analysis_tab(df):
+    """Create the comparative analysis tab content"""
+    return html.Div([
+        # Scrollable container for Comparative Analysis
+        html.Div([
+            # Scatter Plot and Combined Chart Row
+            html.Div([
+                # Scatter Plot
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Scatter Plot Analysis", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Scatter plots reveal relationships between two variables. Each point represents a country or data point. Patterns help identify correlations, outliers, and clusters in the data.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Correlation Analysis", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Explore relationships between variables. Look for patterns, clusters, and outliers to understand how different agricultural metrics relate to each other."
+                    ], className="chart-description"),
+                    
+                    # Add X-axis selector for scatter plot
+                    html.Div([
+                        html.Label("X-Axis Variable", style={'fontWeight': 'bold', 'color': '#f2f2f2', 'marginBottom': '5px', 'fontSize': '12px'}),
+                        dcc.Dropdown(
+                            id='x-axis-dropdown',
+                            options=[
+                                {'label': 'Year', 'value': 'year'},
+                                {'label': 'Value Distribution', 'value': 'value'}
+                            ],
+                            value='year',
+                            clearable=False,
+                            className="dash-dropdown",
+                            style={
+                                'color': '#000000',
+                                'backgroundColor': '#252e3f'
+                            }
+                        )
+                    ], style={'marginBottom': '15px'}),
+                    
+                    dcc.Graph(id='scatter-chart', style={'height': '400px'})
+                ], className="chart-container"),
+                
+                # Combined Chart
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Trends & Averages", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Combines multiple chart types to show both individual country trends and overall averages. Great for comparing individual performance against global patterns.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Combined Analysis", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
+                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "See both individual country performance and overall trends in one view. Perfect for understanding how countries perform relative to global averages."
+                    ], className="chart-description"),
+                    dcc.Graph(id='combined-chart', style={'height': '400px'})
+                ], className="chart-container")
+            ], className="chart-row"),
+            
+            # Data Summary Only
+            html.Div([
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("Data Summary", className="chart-title"),
+                            html.Div([
+                                html.I(className="fas fa-info-circle info-icon"),
+                                html.Span("Statistical summary of the current data selection including count, mean, standard deviation, and distribution percentiles. Use this to understand data quality and distribution.", className="tooltiptext")
+                            ], className="chart-tooltip"),
+                            html.Span(f"Statistical Overview", className="chart-date")
+                        ], className="chart-header"),
+                        html.Div([
+                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn")
+                        ], className="chart-actions")
+                    ], className="chart-header"),
+                    html.Div([
+                        "Get key statistics about your selected data including data quality metrics, distribution summaries, and basic descriptive statistics."
+                    ], className="chart-description"),
+                    html.Div(id='data-summary', className="summary-content")
+                ], className="chart-container full-width"),
+            ], className="chart-row"),
+        ], className="scrollable-section"),
+    ])
