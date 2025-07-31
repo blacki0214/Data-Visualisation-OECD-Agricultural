@@ -82,6 +82,10 @@ app = Dash(__name__,
                'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
                'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap'
            ])
+
+# Expose server for deployment - MUST be before the layout
+server = app.server
+
 app.layout = create_layout(df_cleaned)
 
 # Function to filter data based on user selections
@@ -518,6 +522,3 @@ app.clientside_callback(
 
 if __name__ == '__main__':
     app.run_server(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
-
-# Expose server for deployment
-server = app.server

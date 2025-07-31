@@ -2,8 +2,10 @@ services:
   - type: web
     name: oecd-agricultural-dashboard
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:server
+    buildCommand: |
+      pip install --upgrade pip
+      pip install --no-cache-dir -r requirements.txt
+    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     envVars:
       - key: NEON_HOST
         value: ep-fragrant-sky-a1dbmhdl-pooler.ap-southeast-1.aws.neon.tech
@@ -16,4 +18,4 @@ services:
       - key: NEON_PORT
         value: 5432
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.9
