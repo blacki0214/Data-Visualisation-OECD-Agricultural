@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app.py"
+    }
+  ],
+  "env": {
+    "NEON_HOST": "@neon_host",
+    "NEON_DATABASE": "@neon_database", 
+    "NEON_USER": "@neon_user",
+    "NEON_PASSWORD": "@neon_password",
+    "NEON_PORT": "@neon_port"
+  }
+}
