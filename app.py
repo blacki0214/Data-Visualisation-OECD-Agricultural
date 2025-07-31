@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
 import re
+import os
 
 # Import data loader - now from database
 from utils.database import load_data_from_db
@@ -516,7 +517,7 @@ app.clientside_callback(
 )
 
 if __name__ == '__main__':
-    app.run(debug=True, host='localhost', port=8050)
+    app.run_server(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
 
-# Expose server for Vercel
+# Expose server for deployment
 server = app.server
