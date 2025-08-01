@@ -5,7 +5,7 @@ services:
     buildCommand: |
       pip install --upgrade pip
       pip install --no-cache-dir -r requirements.txt
-    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT --workers 2 --timeout 300 --max-requests 1000 --preload
+    startCommand: gunicorn app:server --bind 127.0.0.1:8050:$PORT --workers 2 --timeout 300 --max-requests 1000 --preload
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9

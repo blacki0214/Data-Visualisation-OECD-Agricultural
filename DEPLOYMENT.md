@@ -25,7 +25,7 @@ git push origin main
 - **Name**: `oecd-agricultural-dashboard`
 - **Environment**: `Python 3`
 - **Build Command**: `pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt`
-- **Start Command**: `gunicorn app:server --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --preload`
+- **Start Command**: `gunicorn app:server --bind 0.0.0.0:$PORT --workers 2 --timeout 300`
 
 ### 4. Set Environment Variables
 In the Render dashboard, add these environment variables:
@@ -66,29 +66,6 @@ If you want to use the `render.yaml` file:
 2. **App Won't Start**: Verify the start command points to `app:server`
 3. **Database Connection**: Ensure environment variables are set correctly
 4. **Import Errors**: Make sure all your Python files are committed to Git
-
-### Gunicorn "Application object must be callable" Error:
-If you see this error, it means the server object isn't properly exposed. The fix:
-
-1. **Ensure server is exposed at module level**:
-   ```python
-   from dash import Dash
-   app = Dash(__name__)
-   server = app.server  # This line is critical
-   ```
-
-2. **Don't load heavy imports at module level** - defer them until needed
-3. **Handle database connection failures gracefully**
-4. **Use the corrected Procfile**:
-   ```
-   web: gunicorn app:server --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --preload
-   ```
-
-### Updated Start Command:
-Use this in your Render settings:
-```
-gunicorn app:server --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --preload
-```
 
 ### Health Check
 Your app includes a health check endpoint. Once deployed, you can test:
