@@ -98,6 +98,22 @@ app = Dash(__name__,
 # IMPORTANT: Expose server for deployment - MUST be named 'server'
 server = app.server
 
+# Add health check endpoint for deployment monitoring
+@server.route('/health')
+def health_check():
+    """Health check endpoint for deployment monitoring"""
+    try:
+        # Simple check that the app is running
+        status = {
+            'status': 'healthy',
+            'database_connected': df is not None and len(df) > 0,
+            'app': 'OECD Agricultural Data Visualization',
+            'version': '1.0'
+        }
+        return status, 200
+    except Exception as e:
+        return {'status': 'unhealthy', 'error': str(e)}, 500
+
 # Set the layout
 app.layout = create_layout(df_cleaned)
 
