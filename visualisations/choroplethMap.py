@@ -28,10 +28,10 @@ def create_choropleth(df, nutrient, measure, selected_year, distribute_eu=True):
         )
         return fig
     
-    # Filter data for the selected year, nutrient, and measure
+    # Filter data for the selected year and nutrient (data is already filtered by category)
+    # Note: 'measure' parameter now contains category name, not individual measure code
     filtered = df[(df['year'] == selected_year) & 
-                 (df['nutrient_type'] == nutrient) &
-                 (df['measure_code'] == measure)]
+                 (df['nutrient_type'] == nutrient)]
     
     # Distribute EU data if requested
     if distribute_eu:
@@ -47,7 +47,7 @@ def create_choropleth(df, nutrient, measure, selected_year, distribute_eu=True):
     if filtered.empty:
         fig = go.Figure()
         fig.update_layout(
-            title=f"No data available for {measure} ({nutrient}) in {selected_year}",
+            title=f"No data available for {measure} category ({nutrient}) in {selected_year}",
             plot_bgcolor='rgba(38, 45, 65, 0.2)',
             paper_bgcolor='rgba(0, 0, 0, 0)',
             font=dict(color="#f2f2f2"),
@@ -56,12 +56,12 @@ def create_choropleth(df, nutrient, measure, selected_year, distribute_eu=True):
         return fig
     
     # Debug info
-    print(f"Creating choropleth for {selected_year}, {nutrient}, {measure}")
+    print(f"Creating choropleth for {selected_year}, {nutrient}, category: {measure}")
     print(f"- Found {len(filtered)} rows with {filtered['country_code'].nunique()} countries")
     print(f"- Countries: {sorted(filtered['country_code'].unique())[:10]}...")
     
-    # Aggregate by country - use mean for multiple values per country (in case we have duplicates)
-    country_data = filtered.groupby('country_code')['value'].mean().reset_index()
+    # Aggregate by country - use sum for category data (since it's already aggregated by category)
+    country_data = filtered.groupby('country_code')['value'].sum().reset_index()
     
     try:
         # Create choropleth map

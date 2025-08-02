@@ -5,23 +5,22 @@ import numpy as np
 from plotly.subplots import make_subplots
 from dash import html, dcc
 
-def create_metrics_dashboard(df, nutrient_type, measure_code, selected_year):
+def create_metrics_dashboard(df, nutrient_type, category_name, selected_year):
     """
     Create a comprehensive metrics dashboard with multiple KPIs
     
     Parameters:
-    - df: DataFrame containing the data
+    - df: DataFrame containing the data (already filtered by category)
     - nutrient_type: Selected nutrient type
-    - measure_code: Selected measure code
+    - category_name: Selected category name (not measure_code)
     - selected_year: Selected year
     
     Returns:
     - Plotly figure object with subplots
     """
-    # Filter data
+    # Filter data (data is already filtered by category, just filter by nutrient and year)
     filtered_df = df[
         (df['nutrient_type'] == nutrient_type) & 
-        (df['measure_code'] == measure_code) &
         (df['year'] == selected_year)
     ].copy()
     
@@ -124,29 +123,28 @@ def create_metrics_dashboard(df, nutrient_type, measure_code, selected_year):
     # Update layout
     fig.update_layout(
         height=800,
-        title_text=f"Metrics Dashboard - {nutrient_type} ({measure_code}) - {selected_year}",
+        title_text=f"Metrics Dashboard - {nutrient_type} ({category_name}) - {selected_year}",
         showlegend=False
     )
     
     return fig
 
-def create_time_series_metrics(df, nutrient_type, measure_code, countries):
+def create_time_series_metrics(df, nutrient_type, category_name, countries):
     """
     Create time series metrics showing trends over time
     
     Parameters:
-    - df: DataFrame containing the data
+    - df: DataFrame containing the data (already filtered by category)
     - nutrient_type: Selected nutrient type  
-    - measure_code: Selected measure code
+    - category_name: Selected category name
     - countries: List of selected countries
     
     Returns:
     - Plotly figure object
     """
-    # Filter data
+    # Filter data (data is already filtered by category, just filter by nutrient and countries)
     filtered_df = df[
         (df['nutrient_type'] == nutrient_type) & 
-        (df['measure_code'] == measure_code) &
         (df['country_code'].isin(countries))
     ].copy()
     
@@ -230,29 +228,28 @@ def create_time_series_metrics(df, nutrient_type, measure_code, countries):
     
     fig.update_layout(
         height=800,
-        title_text=f"Time Series Metrics - {nutrient_type} ({measure_code})",
+        title_text=f"Time Series Metrics - {nutrient_type} ({category_name})",
         showlegend=True
     )
     
     return fig
 
-def create_kpi_cards(df, nutrient_type, measure_code, selected_year):
+def create_kpi_cards(df, nutrient_type, category_name, selected_year):
     """
     Create KPI cards showing key metrics
     
     Parameters:
-    - df: DataFrame containing the data
+    - df: DataFrame containing the data (already filtered by category)
     - nutrient_type: Selected nutrient type
-    - measure_code: Selected measure code
+    - category_name: Selected category name
     - selected_year: Selected year
     
     Returns:
     - HTML Div containing KPI cards
     """
-    # Filter data
+    # Filter data (data is already filtered by category, just filter by nutrient and year)
     filtered_df = df[
         (df['nutrient_type'] == nutrient_type) & 
-        (df['measure_code'] == measure_code) &
         (df['year'] == selected_year)
     ].copy()
     

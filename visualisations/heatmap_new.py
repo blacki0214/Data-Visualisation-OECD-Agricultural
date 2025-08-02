@@ -57,8 +57,12 @@ def create_measure_country_heatmap(df, selected_category, nutrient_type, selecte
         if filtered_df.empty:
             return create_empty_heatmap(f"No data available for category: {selected_category}")
         
-        # Note: We don't filter by selected_countries here - we want to show ALL countries
-        # that have data for the selected measures, not just specific selected countries
+        # Filter by selected countries if provided
+        if selected_countries:
+            filtered_df = filtered_df[filtered_df['country_code'].isin(selected_countries)]
+            
+            if filtered_df.empty:
+                return create_empty_heatmap("No data available for selected countries")
         
         # Aggregate values across ALL YEARS for each measure-country combination
         # This gives us the total value reported for each measure in each country
@@ -70,11 +74,7 @@ def create_measure_country_heatmap(df, selected_category, nutrient_type, selecte
         # Create pivot table: rows = measures, columns = countries
         pivot_df = agg_df.pivot(index='measure_code', columns='country_code', values='value')
         
-        # Only keep countries that have data for the selected measures (remove columns with all NaN)
-        # This ensures x-axis only shows countries that actually have measurements for this category
-        pivot_df = pivot_df.dropna(axis=1, how='all')
-        
-        # Fill remaining NaN values with 0 for better visualization
+        # Fill NaN values with 0 for better visualization
         pivot_df = pivot_df.fillna(0)
         
         # Get unit information
@@ -94,8 +94,8 @@ def create_measure_country_heatmap(df, selected_category, nutrient_type, selecte
         
         # Update layout
         fig.update_layout(
-            title=f'Environmental Measures vs All Countries<br>{selected_category} - {nutrient_type}<br>(Total values across all years - All countries with measurements)',
-            xaxis_title='All Countries (with data)',
+            title=f'Environmental Measures vs Countries<br>{selected_category} - {nutrient_type}<br>(Total values across all years)',
+            xaxis_title='Countries',
             yaxis_title='Environmental Measures',
             plot_bgcolor='rgba(38, 45, 65, 0.2)',
             paper_bgcolor='rgba(0, 0, 0, 0)',

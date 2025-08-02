@@ -8,6 +8,11 @@ from dash import Dash, Input, Output, html
 # Import data loader - now from database
 from utils.database import load_data_from_db
 from utils.country_mapper import clean_country_codes
+from utils.measure_categorizer import (
+    get_category_options_for_dropdown, 
+    filter_and_aggregate_by_category_only,
+    categorize_measure
+)
 
 # Import layout
 from components.layout import create_layout, create_basic_charts_tab, create_advanced_analytics_tab, create_metrics_dashboard_tab, create_comparative_analysis_tab
@@ -22,28 +27,28 @@ from visualisations.datasummary import create_data_summary
 from visualisations.combined_chart import create_combined_chart
 
 # Import new advanced visualizations
-from visualisations.heatmap import create_country_year_heatmap, create_nutrient_comparison_heatmap, create_correlation_heatmap
+from visualisations.heatmap import create_measure_country_heatmap
 from visualisations.metrics_dashboard import create_metrics_dashboard, create_time_series_metrics, create_kpi_cards
 from visualisations.radar_chart import create_radar_chart, create_nutrient_balance_radar, create_multi_year_radar
 from visualisations.sunburst_chart import create_sunburst_chart, create_nutrient_measure_sunburst, create_temporal_sunburst
 
 # Load data from database
-print("🔄 Loading data from Neon database...")
+print("Loading data from Neon database...")
 df = load_data_from_db()
 
 if df is None:
-    print("❌ Failed to load data from database!")
+    print("Failed to load data from database!")
     # Fallback to file-based loading if database fails
     try:
         from utils.data_loader import load_data
-        print("🔄 Falling back to file-based data loading...")
+        print("Falling back to file-based data loading...")
         df = load_data()
     except:
-        print("❌ File-based loading also failed!")
+        print("File-based loading also failed!")
         df = None
     
     if df is None:
-        print("❌ Failed to load data from both database and files!")
+        print("Failed to load data from both database and files!")
         # Create empty DataFrame as last resort
         df = pd.DataFrame({
             'country_code': ['USA', 'CAN'],
@@ -52,9 +57,9 @@ if df is None:
             'measure_code': ['F1', 'F1'],
             'value': [100, 200]
         })
-        print("⚠️ Using minimal sample data")
+        print("Using minimal sample data")
 else:
-    print(f"✅ Successfully loaded {len(df)} rows from database")
+    print(f"Successfully loaded {len(df)} rows from database")
 
 # Clean country codes for dropdown options
 df_cleaned = clean_country_codes(df)
@@ -65,7 +70,7 @@ def check_country_codes():
     
     # Ensure df is available and not None
     if df is None:
-        print("❌ Cannot check country codes: no data available")
+        print("Cannot check country codes: no data available")
         return
     
     iso_3_pattern = r'^[A-Z]{3}$'  # ISO-3 country codes are 3 uppercase letters
@@ -90,10 +95,38 @@ if df is not None:
 # Initialize app
 app = Dash(__name__, 
            suppress_callback_exceptions=True,
+           title="OECD",  # This sets the browser tab title
            external_stylesheets=[
                'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
                'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap'
            ])
+
+# Set additional app properties
+app.title = "OECD Agricultural Analytics Dashboard"
+
+# Custom HTML template with favicon
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>OECD Agricultural Analytics Dashboard</title>
+        <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+        <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+        <meta name="description" content="Interactive dashboard for OECD agricultural environmental data visualization and analysis">
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
 
 # IMPORTANT: Expose server for deployment - MUST be named 'server'
 server = app.server
@@ -118,32 +151,26 @@ def health_check():
 app.layout = create_layout(df_cleaned)
 
 # Function to filter data based on user selections
-def filter_data(countries, nutrient, measure, years):
+def filter_data(countries, nutrient, category, years):
     """
-    Filter data based on user selections, with country code cleaning
+    Filter data based on user selections, with category-based aggregation.
     """
     if df is None:
-        print("❌ No data available for filtering")
+        print("No data available for filtering")
         return pd.DataFrame()  # Return empty DataFrame
         
-    filtered = df.copy()
+    # Use the new category-based filtering and aggregation
+    aggregated_df = filter_and_aggregate_by_category_only(
+        df, category, countries, nutrient, years
+    )
     
-    if countries:
-        filtered = filtered[filtered['country_code'].isin(countries)]
-    
-    if nutrient:
-        filtered = filtered[filtered['nutrient_type'] == nutrient]
-        
-    if measure:
-        filtered = filtered[filtered['measure_code'] == measure]
-    
-    if years:
-        filtered = filtered[(filtered['year'] >= years[0]) & (filtered['year'] <= years[1])]
+    if aggregated_df.empty:
+        return pd.DataFrame()
     
     # Clean country codes for choropleth compatibility
-    filtered = clean_country_codes(filtered)
+    aggregated_df = clean_country_codes(aggregated_df)
         
-    return filtered
+    return aggregated_df
 
 # Time Series Chart Callback
 @app.callback(
@@ -194,7 +221,10 @@ def update_choropleth(nutrient, measure, selected_year, eu_option):
     # Use a flag to indicate whether to distribute EU data
     distribute_eu = (eu_option == 'distribute')
     
-    return create_choropleth(df, nutrient, measure, selected_year, distribute_eu)
+    # Get filtered data for this measure category
+    filtered_df = filter_and_aggregate_by_category_only(df, measure)
+    
+    return create_choropleth(filtered_df, nutrient, measure, selected_year, distribute_eu)
 
 # Bar Chart Callback
 @app.callback(
@@ -300,7 +330,7 @@ def update_combined_chart(countries, nutrient, measure, years):
      Input('measure-dropdown', 'value'),
      Input('year-slider', 'value')]
 )
-def update_summary(countries, nutrient, measure, years):
+def update_data_summary(countries, nutrient, measure, years):
     if not nutrient or not measure:
         return html.Div("Please select nutrient and measure to see data summary.")
     
@@ -326,37 +356,21 @@ def update_tab_content(selected_tab):
 
 # New Visualization Callbacks
 
-# Country-Year Heatmap Callback
+# Category-Country Heatmap Callback
 @app.callback(
     Output('country-year-heatmap', 'figure'),
-    [Input('nutrient-dropdown', 'value'),
-     Input('measure-dropdown', 'value')]
-)
-def update_country_year_heatmap(nutrient, measure):
-    if not nutrient or not measure:
-        fig = go.Figure()
-        fig.update_layout(
-            title="Please select nutrient and measure",
-            plot_bgcolor='rgba(38, 45, 65, 0.2)',
-            paper_bgcolor='rgba(0, 0, 0, 0)',
-            font=dict(color="#f2f2f2"),
-            margin=dict(l=40, r=20, t=50, b=40)
-        )
-        return fig
-    
-    return create_country_year_heatmap(df_cleaned, nutrient, measure)
-
-# Correlation Heatmap Callback
-@app.callback(
-    Output('correlation-heatmap', 'figure'),
     [Input('country-dropdown', 'value'),
-     Input('year-slider', 'value')]
+     Input('nutrient-dropdown', 'value'),
+     Input('measure-dropdown', 'value'),
+     Input('map-year-dropdown', 'value')]
 )
-def update_correlation_heatmap(countries, years):
-    if not countries or not years:
+def update_measure_country_heatmap(countries, nutrient, category, year):
+    print(f"Heatmap callback: countries={countries}, nutrient={nutrient}, category={category}, year={year}")
+    
+    if not countries or not nutrient or not category or not year:
         fig = go.Figure()
         fig.update_layout(
-            title="Please select countries and years",
+            title="Please select countries, nutrient, category and year",
             plot_bgcolor='rgba(38, 45, 65, 0.2)',
             paper_bgcolor='rgba(0, 0, 0, 0)',
             font=dict(color="#f2f2f2"),
@@ -364,8 +378,8 @@ def update_correlation_heatmap(countries, years):
         )
         return fig
     
-    year_list = list(range(years[0], years[1] + 1)) if years else []
-    return create_correlation_heatmap(df_cleaned, countries, year_list)
+    # Use the original data (not pre-aggregated) to allow the heatmap to show individual measures
+    return create_measure_country_heatmap(df_cleaned, category, nutrient, year, countries)
 
 # Radar Chart Callback
 @app.callback(
@@ -425,7 +439,10 @@ def update_metrics_dashboard(nutrient, measure, year):
         )
         return fig
     
-    return create_metrics_dashboard(df_cleaned, nutrient, measure, year)
+    # Get filtered data for this measure category
+    filtered_df = filter_and_aggregate_by_category_only(df_cleaned, measure)
+    
+    return create_metrics_dashboard(filtered_df, nutrient, measure, year)
 
 # Time Series Metrics Callback
 @app.callback(
@@ -446,7 +463,10 @@ def update_time_series_metrics(countries, nutrient, measure):
         )
         return fig
     
-    return create_time_series_metrics(df_cleaned, nutrient, measure, countries)
+    # Get filtered data for this measure category
+    filtered_df = filter_and_aggregate_by_category_only(df_cleaned, measure)
+    
+    return create_time_series_metrics(filtered_df, nutrient, measure, countries)
 
 # KPI Cards Callback
 @app.callback(
@@ -459,7 +479,10 @@ def update_kpi_cards(nutrient, measure, year):
     if not nutrient or not measure or not year:
         return html.Div("Please select nutrient, measure, and year to see KPI cards.")
     
-    return create_kpi_cards(df_cleaned, nutrient, measure, year)
+    # Get filtered data for this measure category
+    filtered_df = filter_and_aggregate_by_category_only(df_cleaned, measure)
+    
+    return create_kpi_cards(filtered_df, nutrient, measure, year)
 
 # Box Plot Callback (update ID to match new layout)
 @app.callback(

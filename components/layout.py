@@ -1,5 +1,6 @@
 from dash import html, dcc, dash_table
 from utils.measure_descriptions import get_measure_description, format_measure_label
+from utils.measure_categorizer import get_category_options_for_dropdown
 
 def get_country_names():
     """
@@ -206,6 +207,14 @@ def create_layout(df):
             ], className="metric-card purple")
         ], className="card-container"),
         
+        # Data Summary Cards Section
+        html.Div([
+            html.Div(id='data-summary', children=[])
+        ], style={
+            'marginBottom': '20px',
+            'width': '100%'
+        }),
+        
         # Controls Container
         html.Div([
             html.Div([
@@ -240,11 +249,11 @@ def create_layout(df):
                 ], className="filter-item"),
                 
                 html.Div([
-                    html.Label("Select Measure", style={'fontWeight': 'bold', 'color': '#f2f2f2'}),
+                    html.Label("Measure Category", style={'fontWeight': 'bold', 'color': '#f2f2f2'}),
                     dcc.Dropdown(
                         id='measure-dropdown',
-                        options=measure_options,
-                        value=df['measure_code'].iloc[0] if not df.empty else None,
+                        options=get_category_options_for_dropdown(),  # type: ignore
+                        value=get_category_options_for_dropdown()[0]['value'] if get_category_options_for_dropdown() else None,
                         className="dash-dropdown",
                         style={
                             'color': '#000000',
@@ -481,21 +490,22 @@ def create_basic_charts_tab(df):
 
 def create_advanced_analytics_tab(df):
     """Create the advanced analytics tab content"""
+    print("Creating advanced analytics tab...")
     return html.Div([
         # Scrollable container for Advanced Analytics
         html.Div([
             # Heatmaps Row
             html.Div([
-                # Country-Year Heatmap
+                # Measure-Country Heatmap (NEW)
                 html.Div([
                     html.Div([
                         html.Div([
-                            html.Span("Country-Year Heatmap", className="chart-title"),
+                            html.Span("Measure-Country Heatmap", className="chart-title"),
                             html.Div([
                                 html.I(className="fas fa-info-circle info-icon"),
-                                html.Span("A heat map showing values across countries (rows) and years (columns). Darker colors indicate higher values. Perfect for spotting temporal and geographical patterns simultaneously.", className="tooltiptext")
+                                html.Span("A heat map showing individual measures within a category (rows) across different countries (columns). Darker colors indicate higher values. Perfect for comparing specific measures across countries.", className="tooltiptext")
                             ], className="chart-tooltip"),
-                            html.Span(f"Temporal Patterns", className="chart-date")
+                            html.Span(f"Category Breakdown", className="chart-date")
                         ], className="chart-header"),
                         html.Div([
                             html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
@@ -503,32 +513,10 @@ def create_advanced_analytics_tab(df):
                         ], className="chart-actions")
                     ], className="chart-header"),
                     html.Div([
-                        "Visualize how values change across both countries and time. Each cell represents a country-year combination, making it easy to spot trends and outliers."
+                        "Visualize how individual measures within a category vary across countries. Each row represents a specific measure, and each column represents a country."
                     ], className="chart-description"),
                     dcc.Graph(id='country-year-heatmap', style={'height': '450px'})
-                ], className="chart-container"),
-                
-                # Correlation Heatmap
-                html.Div([
-                    html.Div([
-                        html.Div([
-                            html.Span("Correlation Matrix", className="chart-title"),
-                            html.Div([
-                                html.I(className="fas fa-info-circle info-icon"),
-                                html.Span("Shows relationships between different nutrients and measures. Values range from -1 (strong negative correlation) to +1 (strong positive correlation). Colors indicate correlation strength.", className="tooltiptext")
-                            ], className="chart-tooltip"),
-                            html.Span(f"Nutrient Relationships", className="chart-date")
-                        ], className="chart-header"),
-                        html.Div([
-                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn"),
-                            html.Button([html.I(className="fas fa-print"), " Print"], className="chart-action-btn")
-                        ], className="chart-actions")
-                    ], className="chart-header"),
-                    html.Div([
-                        "Discover relationships between different agricultural metrics. Strong correlations (dark colors) indicate variables that tend to move together."
-                    ], className="chart-description"),
-                    dcc.Graph(id='correlation-heatmap', style={'height': '450px'})
-                ], className="chart-container"),
+                ], className="chart-container full-width"),
             ], className="chart-row"),
             
             # Radar and Sunburst Row
@@ -713,29 +701,6 @@ def create_comparative_analysis_tab(df):
                     ], className="chart-description"),
                     dcc.Graph(id='combined-chart', style={'height': '400px'})
                 ], className="chart-container")
-            ], className="chart-row"),
-            
-            # Data Summary Only
-            html.Div([
-                html.Div([
-                    html.Div([
-                        html.Div([
-                            html.Span("Data Summary", className="chart-title"),
-                            html.Div([
-                                html.I(className="fas fa-info-circle info-icon"),
-                                html.Span("Statistical summary of the current data selection including count, mean, standard deviation, and distribution percentiles. Use this to understand data quality and distribution.", className="tooltiptext")
-                            ], className="chart-tooltip"),
-                            html.Span(f"Statistical Overview", className="chart-date")
-                        ], className="chart-header"),
-                        html.Div([
-                            html.Button([html.I(className="fas fa-download"), " Export"], className="chart-action-btn")
-                        ], className="chart-actions")
-                    ], className="chart-header"),
-                    html.Div([
-                        "Get key statistics about your selected data including data quality metrics, distribution summaries, and basic descriptive statistics."
-                    ], className="chart-description"),
-                    html.Div(id='data-summary', className="summary-content")
-                ], className="chart-container full-width"),
             ], className="chart-row"),
         ], className="scrollable-section"),
     ])

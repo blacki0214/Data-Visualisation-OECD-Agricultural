@@ -62,10 +62,10 @@ class NeonDatabase:
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
             
-            print("✅ SQLAlchemy engine created successfully")
+            print("SQLAlchemy engine created successfully")
             return engine
         except Exception as e:
-            print(f"❌ Error creating engine: {e}")
+            print(f"Error creating engine: {e}")
             print(f"Connection string: {self.connection_string}")
             return None
     
@@ -389,14 +389,14 @@ def load_data_from_db(table_name='oecd_agricultural_data'):
         
         df = df.rename(columns=column_mapping)
         
-        print(f"✅ Loaded {len(df)} rows from database")
+        print(f"Loaded {len(df)} rows from database")
         return df
         
     except Exception as e:
-        print(f"❌ Error loading data from database: {e}")
+        print(f"Error loading data from database: {e}")
         # Fallback to file-based loading
         from utils.data_loader import load_data
-        print("🔄 Falling back to file-based data loading...")
+        print("Falling back to file-based data loading...")
         return load_data()
 
 def get_data_summary():

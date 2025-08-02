@@ -98,43 +98,6 @@ def create_data_summary(filtered_df, nutrient, measure):
         else:
             return f"{val:.2f} {unit_display}"
     
-    # Create top performers cards based on available data
-    def create_top_performers():
-        performers = []
-        colors = ['#ffd43b', '#a78bfa', '#fb7185']
-        labels = ['TOP PERFORMER', 'SECOND PLACE', 'THIRD PLACE']
-        backgrounds = [
-            'rgba(255, 212, 59, 0.1)',
-            'rgba(167, 139, 250, 0.1)', 
-            'rgba(251, 113, 133, 0.1)'
-        ]
-        borders = [
-            'rgba(255, 212, 59, 0.3)',
-            'rgba(167, 139, 250, 0.3)',
-            'rgba(251, 113, 133, 0.3)'
-        ]
-        
-        for i in range(min(len(top_countries), 3)):
-            performers.append(
-                html.Div([
-                    html.Span(f"{i+1}. {top_countries.index[i]}", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': colors[i]}),
-                    html.Div(labels[i], style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div(f"{top_countries.iloc[i]:.1f}", style={'fontSize': '10px', 'color': '#a9a9a9'})
-                ], style={'backgroundColor': backgrounds[i], 'border': f'1px solid {borders[i]}', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'})
-            )
-        
-        # Fill remaining slots if less than 3 countries
-        for i in range(len(top_countries), 3):
-            performers.append(
-                html.Div([
-                    html.Span("No Data", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#666'}),
-                    html.Div("N/A", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div("Insufficient data", style={'fontSize': '10px', 'color': '#a9a9a9'})
-                ], style={'backgroundColor': 'rgba(100, 100, 100, 0.1)', 'border': '1px solid rgba(100, 100, 100, 0.3)', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'})
-            )
-        
-        return performers
-    
     # Create clean cards layout - no headers or boxes
     summary = [
         # Main Content Row - Only clean cards side by side
@@ -164,7 +127,25 @@ def create_data_summary(filtered_df, nutrient, measure):
             ], style={'width': '20%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
             
             # Middle Left - Top Performers - Clean Cards
-            html.Div(create_top_performers(), style={'width': '25%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
+            html.Div([
+                html.Div([
+                    html.Span(f"1. {list(top_countries.keys())[0]}", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#ffd43b'}),
+                    html.Div("TOP PERFORMER", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
+                    html.Div(f"{list(top_countries.values())[0]:.1f}", style={'fontSize': '10px', 'color': '#a9a9a9'})
+                ], style={'backgroundColor': 'rgba(255, 212, 59, 0.1)', 'border': '1px solid rgba(255, 212, 59, 0.3)', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'}),
+                
+                html.Div([
+                    html.Span(f"2. {list(top_countries.keys())[1]}", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#a78bfa'}),
+                    html.Div("SECOND PLACE", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
+                    html.Div(f"{list(top_countries.values())[1]:.1f}", style={'fontSize': '10px', 'color': '#a9a9a9'})
+                ], style={'backgroundColor': 'rgba(167, 139, 250, 0.1)', 'border': '1px solid rgba(167, 139, 250, 0.3)', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'}),
+                
+                html.Div([
+                    html.Span(f"3. {list(top_countries.keys())[2]}", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#fb7185'}),
+                    html.Div("THIRD PLACE", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
+                    html.Div(f"{list(top_countries.values())[2]:.1f}", style={'fontSize': '10px', 'color': '#a9a9a9'})
+                ], style={'backgroundColor': 'rgba(251, 113, 133, 0.1)', 'border': '1px solid rgba(251, 113, 133, 0.3)', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'})
+            ], style={'width': '25%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
             
             # Middle Right - Statistical Information - Clean Cards
             html.Div([
