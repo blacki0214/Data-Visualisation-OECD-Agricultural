@@ -3,7 +3,7 @@ import pandas as pd
 
 def create_data_summary(filtered_df, nutrient, measure):
     """
-    Create a clean cards-only data summary component
+    Create a comprehensive data summary component that combines statistical analysis and overview
     
     Parameters:
     - filtered_df: DataFrame containing filtered data
@@ -11,7 +11,7 @@ def create_data_summary(filtered_df, nutrient, measure):
     - measure: Selected measure code
     
     Returns:
-    - Dash HTML component with clean cards only
+    - Dash HTML component
     """
     if filtered_df.empty:
         return html.Div([
@@ -98,73 +98,95 @@ def create_data_summary(filtered_df, nutrient, measure):
         else:
             return f"{val:.2f} {unit_display}"
     
-    # Create top performers cards based on available data
-    def create_top_performers():
-        performers = []
-        colors = ['#ffd43b', '#a78bfa', '#fb7185']
-        labels = ['TOP PERFORMER', 'SECOND PLACE', 'THIRD PLACE']
-        backgrounds = [
-            'rgba(255, 212, 59, 0.1)',
-            'rgba(167, 139, 250, 0.1)', 
-            'rgba(251, 113, 133, 0.1)'
-        ]
-        borders = [
-            'rgba(255, 212, 59, 0.3)',
-            'rgba(167, 139, 250, 0.3)',
-            'rgba(251, 113, 133, 0.3)'
-        ]
-        
-        for i in range(min(len(top_countries), 3)):
-            performers.append(
-                html.Div([
-                    html.Span(f"{i+1}. {top_countries.index[i]}", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': colors[i]}),
-                    html.Div(labels[i], style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div(f"{top_countries.iloc[i]:.1f}", style={'fontSize': '10px', 'color': '#a9a9a9'})
-                ], style={'backgroundColor': backgrounds[i], 'border': f'1px solid {borders[i]}', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'})
-            )
-        
-        # Fill remaining slots if less than 3 countries
-        for i in range(len(top_countries), 3):
-            performers.append(
-                html.Div([
-                    html.Span("No Data", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#666'}),
-                    html.Div("N/A", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div("Insufficient data", style={'fontSize': '10px', 'color': '#a9a9a9'})
-                ], style={'backgroundColor': 'rgba(100, 100, 100, 0.1)', 'border': '1px solid rgba(100, 100, 100, 0.3)', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'})
-            )
-        
-        return performers
-    
-    # Create clean cards layout - no headers or boxes
+    # Create comprehensive summary layout
     summary = [
-        # Main Content Row - Only clean cards side by side
+        # Title Section - More Compact
+        html.Div([
+            html.H3("📊 Data Analysis Summary & Overview", 
+                   style={
+                       'color': '#4a9eff', 
+                       'marginBottom': '10px', 
+                       'textAlign': 'center',
+                       'fontSize': '18px',
+                       'fontWeight': '600'
+                   })
+        ]),
+        
+        # Quick Overview Stats Row - More Compact
+        html.Div([
+            html.Div([
+                html.Span(str(total_records), style={'fontSize': '18px', 'fontWeight': 'bold', 'color': '#4a9eff'}),
+                html.Div("Records", style={'fontSize': '10px', 'color': '#a9a9a9'})
+            ], style={'textAlign': 'center', 'flex': '1'}),
+            
+            html.Div([
+                html.Span(str(countries_count), style={'fontSize': '18px', 'fontWeight': 'bold', 'color': '#51cf66'}),
+                html.Div("Countries", style={'fontSize': '10px', 'color': '#a9a9a9'})
+            ], style={'textAlign': 'center', 'flex': '1'}),
+            
+            html.Div([
+                html.Span(years_span, style={'fontSize': '16px', 'fontWeight': 'bold', 'color': '#ffd43b'}),
+                html.Div("Years", style={'fontSize': '10px', 'color': '#a9a9a9'})
+            ], style={'textAlign': 'center', 'flex': '1'}),
+            
+            html.Div([
+                html.Span(unit_display, style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#ff6b6b'}),
+                html.Div("Unit", style={'fontSize': '10px', 'color': '#a9a9a9'})
+            ], style={'textAlign': 'center', 'flex': '1'})
+        ], style={'display': 'flex', 'justifyContent': 'space-around', 'marginBottom': '15px', 'padding': '8px', 'backgroundColor': 'rgba(40, 45, 65, 0.6)', 'borderRadius': '6px', 'border': '1px solid rgba(255, 255, 255, 0.1)'}),
+        
+        # Main Content Row - All sections side by side
         html.Div([
             # Left Column - Key Statistics Cards (Compact)
             html.Div([
                 # Min Value Card
                 html.Div([
-                    html.Span(format_value_with_unit(min_val, unit), style={'fontSize': '12px', 'fontWeight': 'bold', 'color': '#ff6b6b'}),
-                    html.Div("MIN VALUE", style={'fontSize': '9px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div(f"{min_country}", style={'fontSize': '9px', 'color': '#a9a9a9'})
+                    html.Div([
+                        html.Span(format_value_with_unit(min_val, unit), style={'fontSize': '12px', 'fontWeight': 'bold', 'color': '#ff6b6b'}),
+                        html.Div("MIN VALUE", style={'fontSize': '9px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
+                        html.Div(f"{min_country}", style={'fontSize': '9px', 'color': '#a9a9a9'})
+                    ])
                 ], style={'backgroundColor': 'rgba(255, 107, 107, 0.1)', 'border': '1px solid rgba(255, 107, 107, 0.3)', 'marginBottom': '6px', 'padding': '6px', 'borderRadius': '4px', 'textAlign': 'center'}),
                 
                 # Max Value Card
                 html.Div([
-                    html.Span(format_value_with_unit(max_val, unit), style={'fontSize': '12px', 'fontWeight': 'bold', 'color': '#51cf66'}),
-                    html.Div("MAX VALUE", style={'fontSize': '9px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div(f"{max_country}", style={'fontSize': '9px', 'color': '#a9a9a9'})
+                    html.Div([
+                        html.Span(format_value_with_unit(max_val, unit), style={'fontSize': '12px', 'fontWeight': 'bold', 'color': '#51cf66'}),
+                        html.Div("MAX VALUE", style={'fontSize': '9px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
+                        html.Div(f"{max_country}", style={'fontSize': '9px', 'color': '#a9a9a9'})
+                    ])
                 ], style={'backgroundColor': 'rgba(81, 207, 102, 0.1)', 'border': '1px solid rgba(81, 207, 102, 0.3)', 'marginBottom': '6px', 'padding': '6px', 'borderRadius': '4px', 'textAlign': 'center'}),
                 
                 # Average Value Card
                 html.Div([
-                    html.Span(format_value_with_unit(avg_val, unit), style={'fontSize': '12px', 'fontWeight': 'bold', 'color': '#4a9eff'}),
-                    html.Div("AVERAGE", style={'fontSize': '9px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div(f"Median: {format_value_with_unit(median_val, unit)}", style={'fontSize': '8px', 'color': '#a9a9a9'})
+                    html.Div([
+                        html.Span(format_value_with_unit(avg_val, unit), style={'fontSize': '12px', 'fontWeight': 'bold', 'color': '#4a9eff'}),
+                        html.Div("AVERAGE", style={'fontSize': '9px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
+                        html.Div(f"Median: {format_value_with_unit(median_val, unit)}", style={'fontSize': '8px', 'color': '#a9a9a9'})
+                    ])
                 ], style={'backgroundColor': 'rgba(74, 158, 255, 0.1)', 'border': '1px solid rgba(74, 158, 255, 0.3)', 'padding': '6px', 'borderRadius': '4px', 'textAlign': 'center'})
             ], style={'width': '20%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
             
             # Middle Left - Top Performers - Clean Cards
-            html.Div(create_top_performers(), style={'width': '25%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
+            html.Div([
+                html.Div([
+                    html.Span(f"1. {list(top_countries.keys())[0]}", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#ffd43b'}),
+                    html.Div("TOP PERFORMER", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
+                    html.Div(f"{list(top_countries.values())[0]:.1f}", style={'fontSize': '10px', 'color': '#a9a9a9'})
+                ], style={'backgroundColor': 'rgba(255, 212, 59, 0.1)', 'border': '1px solid rgba(255, 212, 59, 0.3)', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'}),
+                
+                html.Div([
+                    html.Span(f"2. {list(top_countries.keys())[1]}", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#a78bfa'}),
+                    html.Div("SECOND PLACE", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
+                    html.Div(f"{list(top_countries.values())[1]:.1f}", style={'fontSize': '10px', 'color': '#a9a9a9'})
+                ], style={'backgroundColor': 'rgba(167, 139, 250, 0.1)', 'border': '1px solid rgba(167, 139, 250, 0.3)', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'}),
+                
+                html.Div([
+                    html.Span(f"3. {list(top_countries.keys())[2]}", style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#fb7185'}),
+                    html.Div("THIRD PLACE", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
+                    html.Div(f"{list(top_countries.values())[2]:.1f}", style={'fontSize': '10px', 'color': '#a9a9a9'})
+                ], style={'backgroundColor': 'rgba(251, 113, 133, 0.1)', 'border': '1px solid rgba(251, 113, 133, 0.3)', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'})
+            ], style={'width': '25%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
             
             # Middle Right - Statistical Information - Clean Cards
             html.Div([
@@ -187,26 +209,35 @@ def create_data_summary(filtered_df, nutrient, measure):
                 ], style={'backgroundColor': 'rgba(139, 92, 246, 0.1)', 'border': '1px solid rgba(139, 92, 246, 0.3)', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'})
             ], style={'width': '25%', 'display': 'inline-block', 'verticalAlign': 'top', 'marginRight': '2%'}),
             
-            # Right Column - Current Selection - Clean Cards
+            # Right Column - Current Selection & Description
             html.Div([
+                html.H5("� Current Selection", 
+                       style={'color': '#f2f2f2', 'fontSize': '13px', 'marginBottom': '8px', 'textAlign': 'center'}),
                 html.Div([
-                    html.Span(nutrient, style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#06b6d4'}),
-                    html.Div("NUTRIENT TYPE", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div("Selected nutrient", style={'fontSize': '9px', 'color': '#a9a9a9'})
-                ], style={'backgroundColor': 'rgba(6, 182, 212, 0.1)', 'border': '1px solid rgba(6, 182, 212, 0.3)', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'}),
-                
-                html.Div([
-                    html.Span(measure if isinstance(measure, str) else str(measure), style={'fontSize': '12px', 'fontWeight': 'bold', 'color': '#ec4899'}),
-                    html.Div("MEASURE CATEGORY", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div("Current selection", style={'fontSize': '9px', 'color': '#a9a9a9'})
-                ], style={'backgroundColor': 'rgba(236, 72, 153, 0.1)', 'border': '1px solid rgba(236, 72, 153, 0.3)', 'marginBottom': '8px', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'}),
-                
-                html.Div([
-                    html.Span(years_span, style={'fontSize': '14px', 'fontWeight': 'bold', 'color': '#10b981'}),
-                    html.Div("YEAR RANGE", style={'fontSize': '10px', 'color': '#a9a9a9', 'fontWeight': 'bold'}),
-                    html.Div("Data period", style={'fontSize': '9px', 'color': '#a9a9a9'})
-                ], style={'backgroundColor': 'rgba(16, 185, 129, 0.1)', 'border': '1px solid rgba(16, 185, 129, 0.3)', 'padding': '10px', 'borderRadius': '6px', 'textAlign': 'center'})
-            ], style={'width': '24%', 'display': 'inline-block', 'verticalAlign': 'top'})
+                    html.Div([
+                        html.Span("Nutrient:", style={'fontWeight': 'bold', 'color': '#a9a9a9', 'fontSize': '10px'}),
+                        html.Div(nutrient, style={'color': '#f2f2f2', 'fontSize': '11px', 'marginTop': '1px'})
+                    ], style={'marginBottom': '6px'}),
+                    html.Div([
+                        html.Span("Category:", style={'fontWeight': 'bold', 'color': '#a9a9a9', 'fontSize': '10px'}),
+                        html.Div(measure if isinstance(measure, str) else str(measure), 
+                                style={'color': '#f2f2f2', 'fontSize': '11px', 'marginTop': '1px'})
+                    ], style={'marginBottom': '6px'}),
+                    html.Div([
+                        html.Span("Description:", style={'fontWeight': 'bold', 'color': '#a9a9a9', 'fontSize': '10px'}),
+                        html.Div(measure_desc[:50] + "..." if len(str(measure_desc)) > 50 else measure_desc, 
+                                style={'color': '#f2f2f2', 'fontSize': '9px', 'marginTop': '1px', 'lineHeight': '1.2'})
+                    ])
+                ])
+            ], style={
+                'width': '24%', 
+                'display': 'inline-block', 
+                'verticalAlign': 'top',
+                'backgroundColor': 'rgba(40, 45, 65, 0.6)',
+                'padding': '10px',
+                'borderRadius': '6px',
+                'border': '1px solid rgba(255, 255, 255, 0.1)'
+            })
         ])
     ]
     
